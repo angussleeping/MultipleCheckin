@@ -8,7 +8,7 @@
 
 ---
 
-## � 拉库命令
+##  拉库命令
 
 ### 青龙面板（QingLong）
 
@@ -341,7 +341,8 @@ MultipleCheckin/
 ## 🙏 致谢
 
 - 感谢原项目作者 [@Cat-zaizai](https://github.com/Cat-zaizai)
-- 感谢青龙面板提供的自动化平台
+- 感谢青龙面板提供的自动化平台[@whyour](https://github.com/whyour)
+- 感谢呆呆面板提供的自动化平台[@linzixuanzz](https://github.com/linzixuanzz)
 
 ---
 
