@@ -1,6 +1,6 @@
-# ZaiZaiCat-Checkin 🐱
+# Multiple-Checkin 🐱
 
-自用每日签到脚本,青龙签到脚本
+青龙签到脚本
 
 > **⚠️ 免责声明**  
 > 本项目中的大量代码由 AI 辅助编写生成，代码规范和格式可能存在不足之处，敬请见谅。  
@@ -8,8 +8,11 @@
 
 ## 📚 在线文档
 
+本项目从https://github.com/Cat-zaizai/ZaiZaiCat-Checkin fork过来的，相关文档参考原仓库在线文档
+
 项目介绍、部署方法、配置说明、脚本使用指南等内容已迁移至在线文档：
 - https://cat-zaizai.github.io/ZaiZaiCat-Checkin-Docs/
+- 脚本根据自身需要选择留下一部分，需要全部脚本，请从https://github.com/Cat-zaizai/ZaiZaiCat-Checkin源库拉取
 
 ## ✅ 脚本可用性状态
 
@@ -18,14 +21,6 @@
 | 平台           | 脚本路径 | 状态 | 说明                  |
 |--------------|---------|------|---------------------|
 | 🚚 顺丰速运      | `script/sf/main.py` | ✅ 可用 | 支持签到和积分任务           |
-| 📱 恩山论坛      | `script/enshan/sign_in.py` | ✅ 可用 | 支持每日签到              |
-| 🔐 看雪论坛      | `script/kanxue/sign_in.py` | ✅ 可用 | 支持每日签到              |
-| 📺 上海杨浦      | `script/shyp/main.py` | ✅ 可用 | 支持任务列表和积分任务         |
-| 🏢 华润通-万象星   | `script/huaruntong/999/main.py` | ✅ 可用 | 支持答题签到              |
-| 💳 华润通-微信版   | `script/huaruntong/huaruntong_wx/main.py` | ✅ 可用 | 支持签到送积分             |
-| 🛒 华润通-Ole'  | `script/huaruntong/ole/main.py` | ❌ 不可用 | 需要动态获取微信code换取token |
-| 🎯 华润通-文体未来荟 | `script/huaruntong/wentiweilaihui/main.py` | ✅ 可用 | 支持签到和积分查询           |
-| 👟 鸿星尔克      | `script/erke/main.py` | ✅ 可用 | 支持签到和积分明细查询         |
 | 📝 WPS Office  | `script/wps/main.py` | ✅ 可用 | 支持任务中心和天天领福利双页面任务 |
 | 💰 什么值得买      | `script/smzdm/sign_daily_task/main.py` | ✅ 可用 | 支持每日签到和众测任务         |
 | 🤖 WorkBuddy    | `script/workbuddy/main.py` | ✅ 可用 | 支持每日签到、令牌自动续期与多账号管理 |
@@ -157,13 +152,8 @@ WorkBuddy（CodeBuddy）每日签到脚本，接口实现参考 [cockpit-tools](
 
 - 感谢所有为本项目提供帮助和支持的朋友
 - 感谢青龙面板提供的自动化平台
+- 感谢原项目作者[@Cat-zaizai](https://github.com/Cat-zaizai)
 
-## 📧 联系方式
-
-如有问题或建议，欢迎通过以下方式联系：
-
-- GitHub Issues: [提交问题](https://github.com/Cat-zaizai/ZaiZaiCat-Checkin/issues)
-- Email: wusan503@gmail.com
 
 ---
 
