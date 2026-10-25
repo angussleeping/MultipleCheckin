@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 new Env('TraeCN签到');
-cron: 30 8 * * *
+cron: 30 4 * * *
 """
 
 """
