@@ -12,24 +12,61 @@
 
 ### 青龙面板（QingLong）
 
-在「订阅管理」中新增订阅：
+**推荐方式：使用 `ql git` 整库克隆（避免文件缺失）**
 
-| 字段 | 值 |
-|---|---|
-| 名称 | MultipleCheckin |
-| 类型 | 公开仓库 |
-| 链接 | `https://github.com/angussleeping/MultipleCheckin.git` |
-| 分支 | `main` |
-| 定时类型 | 间隔（分钟）或 crontab |
-| 拉取脚本 | 整个仓库 |
-
-或在青龙容器内执行：
+`ql repo` 默认只识别 `.py` / `.js` / `.ts` / `.sh` 等脚本文件，会自动跳过 `config/`、`tests/` 等非脚本目录。由于本项目脚本依赖 `_shared` 共享包、`notification` 推送模块，且必须在 `config/token.json` 中配置账号，请使用 `ql git` 整库克隆：
 
 ```bash
-ql repo https://github.com/angussleeping/MultipleCheckin.git "main"
+ql git https://github.com/angussleeping/MultipleCheckin.git main
 ```
 
-> 提示：本项目脚本较多且彼此依赖 `_shared` 与 `notification` 公共模块，建议直接 clone 整个仓库到 `/ql/scripts/MultipleCheckin/` 后通过定时任务调用 `script/<platform>/main.py`，避免只拉取部分脚本导致依赖缺失。
+克隆完成后所有文件位于 `/ql/data/scripts/MultipleCheckin/`，包含完整目录结构：
+
+```
+/ql/data/scripts/MultipleCheckin/
+├── config/                  # 账号与推送配置
+├── notification/            # 统一推送模块
+├── script/
+│   ├── _shared/             # 共享基础设施
+│   ├── sf/                  # 顺丰
+│   ├── wps/                 # WPS
+│   ├── smzdm/               # 什么值得买
+│   ├── workbuddy/           # WorkBuddy
+│   ├── trae/                # Trae CN
+│   └── agentrouter/         # Agent Router
+└── ...
+```
+
+#### 配置步骤
+
+1. **安装依赖**（在青龙容器内执行一次）：
+
+```bash
+pip3 install -r /ql/data/scripts/MultipleCheckin/requirements.txt
+```
+
+2. **复制配置模板**并填写：
+
+```bash
+cd /ql/data/scripts/MultipleCheckin/config
+cp template_token.json token.json
+cp template_notification.json notification.json  # 可选,不需要推送可跳过
+```
+
+也可直接在青龙面板「配置文件」页面，于 `MultipleCheckin/config/` 下新建 `token.json` 粘贴模板内容并填写。
+
+3. **添加定时任务**：在青龙面板「定时任务」中新建任务，例如：
+
+| 名称 | 命令 | 定时规则 |
+|---|---|---|
+| 顺丰签到 | `task MultipleCheckin/script/sf/main.py` | `0 8 * * *` |
+| WPS 签到 | `task MultipleCheckin/script/wps/main.py` | `30 8 * * *` |
+| SMZDM 签到 | `task MultipleCheckin/script/smzdm/sign_daily_task/main.py` | `0 9 * * *` |
+| WorkBuddy 签到 | `task MultipleCheckin/script/workbuddy/main.py` | `30 8 * * *` |
+| Trae CN 签到 | `task MultipleCheckin/script/trae/main.py` | `0 9 * * *` |
+| Agent Router 签到 | `task MultipleCheckin/script/agentrouter/main.py` | `30 9 * * *` |
+
+> **⚠️ 不要使用 `ql repo` 拉取本仓库**：它会跳过 `config/`、`notification/` 等目录，导致脚本运行时找不到配置文件或导入失败。
 
 ### 呆呆面板（DaiDai）
 
