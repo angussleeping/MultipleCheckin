@@ -8,7 +8,7 @@
 
 ---
 
-## � 拉库命令
+##  拉库命令
 
 ### 青龙面板（QingLong）
 
@@ -236,7 +236,7 @@ python3 script/workbuddy/import_accounts.py
 
 > 脚本会自动调用登录刷新接口换取访问令牌，无需手动维护 access_token。
 
-#### � Agent Router（`agentrouter`）
+####  Agent Router（`agentrouter`）
 
 ```json
 "agentrouter": {
@@ -321,7 +321,7 @@ MultipleCheckin/
 
 ---
 
-## � 各平台详细文档
+##  各平台详细文档
 
 - [顺丰速运](script/sf/README.md)
 - [WPS Office](script/wps/README.md)
@@ -341,7 +341,7 @@ MultipleCheckin/
 - ✂️ **拆分大文件**：
   - `wps/daily_benefits.py` 由 2075 行降至 1943 行，福利入口发现逻辑抽到 `benefit_entry.py`
   - `smzdm/api/api.py` 由 2016 行降至 152 行，按业务域拆为 activity/tasks/checkin/follow/baoliao 五个 Mixin，对外 API 不变
-- � **修复**：workbuddy/main.py 中 print 改为 logger.error
+-  **修复**：workbuddy/main.py 中 print 改为 logger.error
 - ✅ **测试**：新增 send_summary_notification 4 个分支测试，全部 40 个测试通过
 
 ### 2026-09-12
@@ -378,7 +378,8 @@ MultipleCheckin/
 ## 🙏 致谢
 
 - 感谢原项目作者 [@Cat-zaizai](https://github.com/Cat-zaizai)
-- 感谢青龙面板提供的自动化平台
+- 感谢青龙面板提供的自动化平台[@whyour](https://github.com/whyour)
+- 感谢呆呆面板提供的自动化平台[@linzixuanzz](https://github.com/linzixuanzz)
 
 ---
 
