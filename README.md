@@ -12,7 +12,7 @@
 
 项目介绍、部署方法、配置说明、脚本使用指南等内容已迁移至在线文档：
 - https://cat-zaizai.github.io/ZaiZaiCat-Checkin-Docs/
-- 脚本根据自身需要选择留下一部分，需要全部脚本，请从https://github.com/Cat-zaizai/ZaiZaiCat-Checkin源库拉取
+- 脚本根据自身需要选择留下一部分，需要全部脚本，请从https://github.com/Cat-zaizai/ZaiZaiCat-Checkin 源库拉取
 
 ## ✅ 脚本可用性状态
 
