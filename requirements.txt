@@ -1,0 +1,15 @@
+# 核心依赖
+requests>=2.31.0,<3.0.0
+urllib3>=2.0.0,<3.0.0
+
+# 加密/签名(部分平台 token 加解密需要)
+pycryptodome>=3.19.0,<4.0.0
+
+# 顺丰签名计算需要执行 JS(sf/api.py 的 import execjs)
+PyExecJS>=1.5.1
+
+# 什么值得买爆料图片处理需要(smzdm/api/api.py 的 from PIL import Image)
+Pillow>=10.0.0
+
+# 开发依赖(运行测试与静态检查时使用)
+# pip install -r requirements-dev.txt

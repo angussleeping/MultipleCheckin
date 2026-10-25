@@ -1,0 +1,41 @@
+[project]
+name = "multiple-checkin"
+version = "0.2.0"
+description = "多平台签到脚本库(青龙面板)"
+requires-python = ">=3.9"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
+
+[tool.ruff]
+line-length = 120
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "C4", "SIM"]
+ignore = [
+    "E501",  # 行长度由 formatter 处理
+]
+
+[tool.ruff.lint.per-file-ignores]
+# 平台脚本历史代码,放宽部分规则
+"script/sf/**" = ["SIM", "C4"]
+"script/smzdm/**" = ["SIM", "C4"]
+"script/wps/**" = ["SIM", "C4"]
+"script/trae/**" = ["SIM"]
+"script/workbuddy/**" = ["SIM"]
+"script/agentrouter/**" = ["SIM"]
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "script.*"
+ignore_errors = true

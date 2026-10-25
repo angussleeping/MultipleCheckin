@@ -1,0 +1,212 @@
+{
+  "sf": {
+    "accounts": [
+      {
+        "account_name": "大号",
+        "cookies": "COOKIE_MASKED",
+        "user_id": "MASKED",
+        "user_agent": "UA_MASKED",
+        "channel": "weixin",
+        "device_id": "DEVICE_MASKED"
+      },
+      {
+        "account_name": "小号",
+        "cookies": "COOKIE_MASKED",
+        "user_id": "MASKED",
+        "user_agent": "UA_MASKED",
+        "channel": "weixin",
+        "device_id": "DEVICE_MASKED"
+      }
+    ]
+  },
+  "shyp": {
+    "accounts": [
+      {
+        "account_name": "账号1",
+        "token": "TOKEN_MASKED",
+        "device_id": "DEVICE_MASKED",
+        "site_id": "MASKED",
+        "user_agent": "UA_MASKED"
+      }
+    ]
+  },
+  "enshan": {
+    "accounts": [
+      {
+        "account_name": "默认账号",
+        "cookies": "COOKIE_MASKED",
+        "formhash": "MASKED",
+        "user_agent": "UA_MASKED"
+      }
+    ]
+  },
+  "kanxue": {
+    "kanxue": {
+      "accounts": [
+        {
+          "account_name": "默认账号",
+          "cookie": "COOKIE_MASKED",
+          "csrf_token": "MASKED",
+          "user_agent": "UA_MASKED"
+        }
+      ]
+    }
+  },
+  "huaruntong": {
+    "999": {
+      "accounts": [
+        {
+          "account_name": "大号",
+          "token": "TOKEN_MASKED",
+          "mobile": "MOBILE_MASKED",
+          "user_agent": "UA_MASKED"
+        },
+        {
+          "account_name": "小号",
+          "token": "TOKEN_MASKED",
+          "mobile": "MOBILE_MASKED",
+          "user_agent": "UA_MASKED"
+        }
+      ]
+    },
+    "huaruntong_wx": {
+      "accounts": [
+        {
+          "account_name": "大号",
+          "answerResult": 1,
+          "channelId": "APP",
+          "merchantCode": "MASKED",
+          "storeCode": "MASKED",
+          "sysId": "MASKED",
+          "transactionUuid": "MASKED",
+          "inviteCode": "MASKED",
+          "token": "TOKEN_MASKED",
+          "user_agent": "UA_MASKED"
+        },
+        {
+          "account_name": "小号",
+          "answerResult": 1,
+          "channelId": "APP",
+          "merchantCode": "MASKED",
+          "storeCode": "MASKED",
+          "sysId": "MASKED",
+          "transactionUuid": "MASKED",
+          "inviteCode": "MASKED",
+          "token": "TOKEN_MASKED",
+          "user_agent": "UA_MASKED"
+        }
+      ]
+    },
+    "ole": {
+      "accounts": [
+        {
+          "account_name": "大号",
+          "session_id": "SESSION_MASKED",
+          "device_name": "MOBILE_MASKED",
+          "unique": "MASKED",
+          "ole_wx_open_id": "MASKED",
+          "shop_code": "MASKED",
+          "city_id": "MASKED",
+          "user_agent": "UA_MASKED"
+        },
+        {
+          "account_name": "小号",
+          "session_id": "SESSION_MASKED",
+          "device_name": "MOBILE_MASKED",
+          "unique": "MASKED",
+          "ole_wx_open_id": "MASKED",
+          "shop_code": "MASKED",
+          "city_id": "MASKED",
+          "user_agent": "UA_MASKED"
+        }
+      ]
+    },
+    "wentiweilaihui": {
+      "accounts": [
+        {
+          "account_name": "大号",
+          "token": "TOKEN_MASKED",
+          "mobile": "MOBILE_MASKED",
+          "user_agent": "UA_MASKED"
+        },
+        {
+          "account_name": "小号",
+          "token": "TOKEN_MASKED",
+          "mobile": "MOBILE_MASKED",
+          "user_agent": "UA_MASKED"
+        }
+      ]
+    }
+  },
+  "smzdm": {
+    "accounts": [
+      {
+        "name": "111",
+        "cookie": "COOKIE_MASKED",
+        "user_agent": "UA_MASKED",
+        "setting": "MASKED"
+      }
+    ]
+  },
+  "erke": {
+    "accounts": [
+      {
+        "account_name": "",
+        "member_id": "",
+        "enterprise_id": "",
+        "unionid": "",
+        "openid": "",
+        "wx_openid": "",
+        "user_agent": ""
+      },
+      {
+        "account_name": "",
+        "member_id": "",
+        "enterprise_id": "",
+        "unionid": "",
+        "openid": "",
+        "wx_openid": "",
+        "user_agent": ""
+      }
+    ]
+  },
+  "wps": {
+    "accounts": [
+      {
+        "account_name": "大号",
+        "user_id": 123456789,
+        "cookies": "COOKIE_MASKED",
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/"
+      }
+    ]
+  },
+  "workbuddy": {
+    "accounts": [
+      {
+        "account_name": "主号",
+        "email": "you@example.com",
+        "access_token": "你的访问令牌",
+        "refresh_token": "你的刷新令牌",
+        "uid": "你的用户ID",
+        "enterprise_id": "",
+        "domain": ""
+      }
+    ]
+  },
+  "trae": {
+    "accounts": [
+      {
+        "account_name": "主号",
+        "sessionid": "浏览器 Cookie 的 sessionid 值"
+      }
+    ]
+  },
+  "agentrouter": {
+    "accounts": [
+      {
+        "account_name": "主号",
+        "github_session": "GitHub 登录后的 user_session 值"
+      }
+    ]
+  }
+}
