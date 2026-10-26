@@ -143,17 +143,29 @@ cp config/template_notification.json config/notification.json
   "accounts": [
     {
       "account_name": "大号",
-      "cookies": "从顺丰 APP 或小程序抓包获取的完整 Cookie 字符串",
-      "user_id": "顺丰用户ID（抓包请求头里的 userId）",
-      "user_agent": "设备 User-Agent，与抓包时保持一致",
+      "sign": "顺丰 APP 分享链接中的 sign 参数",
       "channel": "weixin",
-      "device_id": "设备ID（抓包请求里的 deviceId）"
+      "device_id": "设备ID",
+      "user_agent": ""
     }
   ]
 }
 ```
 
-获取方式：抓包顺丰 APP / 顺丰速运+ 小程序任意请求即可拿到 `Cookie`、`userId`、`deviceId`。
+| 字段 | 必填 | 说明 |
+|---|---|---|
+| `sign` | ✅ | 顺丰 APP「分享」生成的签名，脚本用它换登录态；**有效期很短**，失效后需重新获取 |
+| `channel` | ✅ | 渠道标识，PC 浏览器抓包可得，常见值 `weixin` |
+| `device_id` | ✅ | APP 侧设备标识，需从 APP 抓包获取 |
+| `user_agent` | ❌ | 留空则使用脚本内置 UA |
+
+获取方式：
+
+1. **`sign`**：手机打开顺丰速运 APP → 进入积分/福利页面 → 点「分享」→ 复制分享链接，链接里 `sign=xxxx` 的值即为所需（脚本会自动 URL 解码，原样粘贴即可）。分享链接需在 APP 内生成，**PC 浏览器无法直接获取**。
+2. **`channel`**：PC 浏览器登录 [顺丰福利页](https://mcs-mimp-web.sf-express.com/superWelfare)，DevTools → Network → 任一 `/mcs-mimp/` 请求 → 请求头 `channel` 的值。
+3. **`device_id`**：从顺丰 APP 抓包（请求体中的 `deviceId` / 请求头设备标识）获取；浏览器侧没有这个值。
+
+> `cookies` / `user_id` 已不再需要填写：脚本会通过 `sign` 调用分享登录接口自动换取。
 
 #### 📝 WPS Office（`wps`）
 
@@ -323,7 +335,7 @@ MultipleCheckin/
 
 ##  各平台详细文档
 
-- [顺丰速运](script/sf/README.md)
+- 顺丰速运（配置字段见上方「各平台 Cookie / Token 配置」）
 - [WPS Office](script/wps/README.md)
 - [什么值得买](script/smzdm/README.md)
 - [WorkBuddy](script/workbuddy/README.md)

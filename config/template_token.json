@@ -3,19 +3,17 @@
     "accounts": [
       {
         "account_name": "大号",
-        "cookies": "COOKIE_MASKED",
-        "user_id": "MASKED",
-        "user_agent": "UA_MASKED",
+        "sign": "顺丰 APP 分享链接中的 sign 参数（有效期很短，需及时填写）",
         "channel": "weixin",
-        "device_id": "DEVICE_MASKED"
+        "device_id": "DEVICE_MASKED",
+        "user_agent": ""
       },
       {
         "account_name": "小号",
-        "cookies": "COOKIE_MASKED",
-        "user_id": "MASKED",
-        "user_agent": "UA_MASKED",
+        "sign": "顺丰 APP 分享链接中的 sign 参数（有效期很短，需及时填写）",
         "channel": "weixin",
-        "device_id": "DEVICE_MASKED"
+        "device_id": "DEVICE_MASKED",
+        "user_agent": ""
       }
     ]
   },
