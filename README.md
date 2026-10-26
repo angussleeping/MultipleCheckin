@@ -45,15 +45,18 @@ ql git https://github.com/angussleeping/MultipleCheckin.git main
 pip3 install -r /ql/data/scripts/MultipleCheckin/requirements.txt
 ```
 
-2. **填写配置文件**（`config/token.json` 已随仓库提供占位模板，直接编辑即可）：
+2. **创建配置文件**（仓库只提供 `*.example.json` 模板，真实配置不会被 git 跟踪）：
 
 ```bash
 cd /ql/data/scripts/MultipleCheckin/config
+cp token.example.json token.json              # 必填,各平台账号
+cp notification.example.json notification.json  # 可选,推送渠道
 vi token.json              # 填写各平台账号,字段说明见下文
-vi notification.json       # 可选,不需要推送可跳过
 ```
 
-也可在青龙面板「配置文件」页面，于 `MultipleCheckin/config/` 下直接编辑 `token.json`。
+也可在青龙面板「配置文件」页面，于 `MultipleCheckin/config/` 下新建 `token.json` 并粘贴 `token.example.json` 内容。
+
+> `config/token.json` 与 `config/notification.json` 已在 `.gitignore` 中，**拉库更新不会覆盖它们**。
 
 3. **添加定时任务**：在青龙面板「定时任务」中新建任务，例如：
 
@@ -122,13 +125,19 @@ pip3 install -r /root/scripts/MultipleCheckin/requirements.txt
 
 所有账号与推送配置统一放在 `config/` 目录，青龙面板可直接在「配置文件」中编辑：
 
-- `config/token.json`：各平台账号 Cookie / Token（必填）
+- `config/token.json`：各平台账号 Cookie / Token（必填，需从模板复制）
 - `config/notification.json`：推送渠道配置（可选，不配置则不推送）
 
-仓库中的这两个文件是**占位模板**，直接在其中填写真实账号信息即可：
+仓库中只包含模板，真实配置需自行创建：
 
-> ⚠️ 填写后的 `config/token.json` 含真实凭证。如果 fork 或推送到公开仓库，请先用
-> `git rm --cached config/token.json config/notification.json` 取消跟踪，避免凭证泄露。
+```bash
+cd config
+cp token.example.json token.json
+cp notification.example.json notification.json   # 可选
+```
+
+> ✅ `token.json` 与 `notification.json` 已列入 `.gitignore`，**拉库/更新不会覆盖本地配置**，
+> 也不会被误提交。升级脚本时无需备份账号信息。
 
 ### 各平台 Cookie / Token 配置
 
@@ -291,8 +300,8 @@ python3 script/workbuddy/import_accounts.py
 ```
 MultipleCheckin/
 ├── config/
-│   ├── token.json                  # 账号配置（占位模板，按需填写）
-│   └── notification.json           # 推送配置（占位模板，可选）
+│   ├── token.example.json          # 账号配置模板（复制为 token.json 后填写）
+│   └── notification.example.json   # 推送配置模板（可选）
 ├── notification/                   # 统一推送模块
 │   ├── manager.py                  # 渠道编排入口
 │   ├── config_loader.py            # 配置加载
