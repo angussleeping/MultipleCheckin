@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 new Env('WPS天天领福利');
 cron: 1 1 1 1 1
@@ -25,7 +24,7 @@ import random
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import requests
 
@@ -44,7 +43,8 @@ from _shared import (
 )
 from benefit_entry import discover_benefit_portal
 from logging_utils import bind_logger, log_page_switch, log_task_result
-from notification import send_notification, NotificationSound
+
+from notification import NotificationSound, send_notification
 
 
 class DailyBenefitsAPI:
@@ -97,9 +97,9 @@ class DailyBenefitsAPI:
         self.logger = bind_logger(setup_logger("wps.daily_benefits.api"), page=DailyBenefitsTasks.page_name)
 
     @staticmethod
-    def _parse_cookies(cookie_str: str) -> Dict[str, str]:
+    def _parse_cookies(cookie_str: str) -> dict[str, str]:
         """将 Cookie 字符串解析为字典"""
-        cookies: Dict[str, str] = {}
+        cookies: dict[str, str] = {}
         for item in cookie_str.split("; "):
             if "=" in item:
                 key, value = item.split("=", 1)
@@ -107,7 +107,7 @@ class DailyBenefitsAPI:
         return cookies
 
     @staticmethod
-    def _extract_error_message(result: Dict[str, Any]) -> str:
+    def _extract_error_message(result: dict[str, Any]) -> str:
         """从返回结果中提取错误消息"""
         return result.get("msg") or result.get("message") or result.get("error") or "未知错误"
 
@@ -124,7 +124,7 @@ class DailyBenefitsAPI:
         return timestamp
 
     @classmethod
-    def _resolve_sign_date(cls, item: Dict[str, Any], sign_records: List[Dict[str, Any]]) -> str:
+    def _resolve_sign_date(cls, item: dict[str, Any], sign_records: list[dict[str, Any]]) -> str:
         """优先使用服务端时间推导签到日期，缺失时回退到记录中的最新日期。"""
         server_time = cls._normalize_server_time(item.get("server_time", 0))
         if server_time:
@@ -140,7 +140,7 @@ class DailyBenefitsAPI:
         return today
 
     @staticmethod
-    def _count_signed_days(sign_records: List[Dict[str, Any]]) -> int:
+    def _count_signed_days(sign_records: list[dict[str, Any]]) -> int:
         """统计当前系列已签到天数。"""
         return sum(1 for record in sign_records if record.get("sign_status") == "signed")
 
@@ -157,7 +157,7 @@ class DailyBenefitsAPI:
         keywords = ("Token已过期", "ErrNotLogin", "userNotLogin", "未登录", "请重新登录")
         return any(keyword in str(message) for keyword in keywords)
 
-    def _build_failure_result(self, payload: Dict[str, Any], default_error: str = "未知错误") -> Dict[str, Any]:
+    def _build_failure_result(self, payload: dict[str, Any], default_error: str = "未知错误") -> dict[str, Any]:
         error_message = self._extract_error_message(payload) or default_error
         result = {
             "success": False,
@@ -176,10 +176,10 @@ class DailyBenefitsAPI:
         method: str,
         url: str,
         *,
-        headers: Optional[Dict[str, str]] = None,
-        params: Optional[Dict[str, Any]] = None,
-        json_data: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+        headers: Optional[dict[str, str]] = None,
+        params: Optional[dict[str, Any]] = None,
+        json_data: Optional[dict[str, Any]] = None
+    ) -> dict[str, Any]:
         """统一请求入口"""
         request_headers = self.base_headers.copy()
         if headers:
@@ -211,7 +211,7 @@ class DailyBenefitsAPI:
                 "error": f"响应解析失败: {exc}"
             }
 
-    def get_market_activity(self, payload: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def get_market_activity(self, payload: Optional[dict[str, Any]] = None) -> dict[str, Any]:
         """获取单个渠道的市场活动数据"""
         request_payload = payload if payload is not None else self.MARKET_ACTIVITY_CHANNELS[0]
         result = self._request(
@@ -237,7 +237,7 @@ class DailyBenefitsAPI:
             "data": payload_data
         }
 
-    def get_benefit_portal(self) -> Dict[str, Any]:
+    def get_benefit_portal(self) -> dict[str, Any]:
         """跨多个营销渠道发现并选中「天天领福利」活动入口"""
         return discover_benefit_portal(
             self.get_market_activity,
@@ -245,7 +245,7 @@ class DailyBenefitsAPI:
             self.logger,
         )
 
-    def get_page_info(self, portal_info: Dict[str, Any]) -> Dict[str, Any]:
+    def get_page_info(self, portal_info: dict[str, Any]) -> dict[str, Any]:
         """获取页面全部活动信息"""
         self.logger.info("获取页面活动信息", extra={"step": "页面信息"})
         activity_number = portal_info["activity_number"]
@@ -280,10 +280,10 @@ class DailyBenefitsAPI:
             "data": payload
         }
 
-    def get_member_trial_info(self, page_info: Dict[str, Any]) -> Dict[str, Any]:
+    def get_member_trial_info(self, page_info: dict[str, Any]) -> dict[str, Any]:
         """从总活动返回数据中提取会员免费试用模块"""
         data_list = page_info.get("data", [])
-        fallback_item: Optional[Dict[str, Any]] = None
+        fallback_item: Optional[dict[str, Any]] = None
 
         for item in data_list:
             if not isinstance(item, dict):
@@ -332,12 +332,12 @@ class DailyBenefitsAPI:
 
     def sign_up_member_trial(
         self,
-        portal_info: Dict[str, Any],
+        portal_info: dict[str, Any],
         component_number: str,
         component_node_id: str,
         cycle_id: str,
         session_id: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """执行会员免费试用申请"""
         csrf_token = self.cookies.get("act_csrf_token") or self.cookies.get("csrf")
         if not csrf_token:
@@ -403,10 +403,10 @@ class DailyBenefitsAPI:
             failure_result["error_type"] = "token_expired"
         return failure_result
 
-    def get_fragment_collect_info(self, page_info: Dict[str, Any]) -> Dict[str, Any]:
+    def get_fragment_collect_info(self, page_info: dict[str, Any]) -> dict[str, Any]:
         """从总活动返回数据中提取打卡免费领会员模块"""
         data_list = page_info.get("data", [])
-        fallback_item: Optional[Dict[str, Any]] = None
+        fallback_item: Optional[dict[str, Any]] = None
 
         for item in data_list:
             if not isinstance(item, dict):
@@ -475,13 +475,13 @@ class DailyBenefitsAPI:
 
     def sign_in_fragment_collect(
         self,
-        portal_info: Dict[str, Any],
+        portal_info: dict[str, Any],
         component_number: str,
         component_node_id: str,
         sign_date: str,
         sign_series_id: str,
         is_new_sign_series: bool
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """执行打卡免费领会员签到"""
         csrf_token = self.cookies.get("act_csrf_token") or self.cookies.get("csrf")
         if not csrf_token:
@@ -546,7 +546,7 @@ class DailyBenefitsAPI:
         return failure_result
 
     @staticmethod
-    def _pick_lottery_session(lottery_list: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    def _pick_lottery_session(lottery_list: list[dict[str, Any]]) -> Optional[dict[str, Any]]:
         """优先挑选进行中的抽奖场次"""
         for session in lottery_list:
             if (
@@ -561,11 +561,11 @@ class DailyBenefitsAPI:
 
         return lottery_list[0] if lottery_list else None
 
-    def get_daily_lottery_info(self, page_info: Dict[str, Any]) -> Dict[str, Any]:
+    def get_daily_lottery_info(self, page_info: dict[str, Any]) -> dict[str, Any]:
         """从总活动返回数据中提取天天抽奖模块"""
         data_list = page_info.get("data", [])
-        fallback_item: Optional[Dict[str, Any]] = None
-        fallback_session: Optional[Dict[str, Any]] = None
+        fallback_item: Optional[dict[str, Any]] = None
+        fallback_session: Optional[dict[str, Any]] = None
 
         for item in data_list:
             if not isinstance(item, dict):
@@ -629,11 +629,11 @@ class DailyBenefitsAPI:
 
     def exec_daily_lottery(
         self,
-        portal_info: Dict[str, Any],
+        portal_info: dict[str, Any],
         component_number: str,
         component_node_id: str,
         session_id: Any
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """执行天天抽奖"""
         csrf_token = self.cookies.get("act_csrf_token") or self.cookies.get("csrf")
         if not csrf_token:
@@ -702,11 +702,11 @@ class DailyBenefitsAPI:
 
     def receive_daily_lottery_reward(
         self,
-        portal_info: Dict[str, Any],
+        portal_info: dict[str, Any],
         component_number: str,
         component_node_id: str,
         sign_series_id: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """领取天天福利第 7 天奖励"""
         csrf_token = self.cookies.get("act_csrf_token") or self.cookies.get("csrf")
         if not csrf_token:
@@ -799,8 +799,8 @@ class DailyBenefitsTasks:
 
         self.enable_notification = enable_notification
         self.logger = self._setup_logger()
-        self.accounts: List[Dict[str, Any]] = []
-        self.account_results: List[Dict[str, Any]] = []
+        self.accounts: list[dict[str, Any]] = []
+        self.account_results: list[dict[str, Any]] = []
         if load_accounts:
             self._init_accounts()
 
@@ -832,8 +832,8 @@ class DailyBenefitsTasks:
 
     @staticmethod
     def _sync_free_member_checkin_state(
-        free_member_checkin: Dict[str, Any],
-        fragment_result: Dict[str, Any]
+        free_member_checkin: dict[str, Any],
+        fragment_result: dict[str, Any]
     ) -> None:
         """将页面最新签到状态回填到汇总结果。"""
         today_record = fragment_result.get("today_record", {})
@@ -845,7 +845,7 @@ class DailyBenefitsTasks:
 
     @staticmethod
     def _build_free_member_checkin_message(
-        free_member_checkin: Dict[str, Any],
+        free_member_checkin: dict[str, Any],
         *,
         signed_now: bool = False
     ) -> str:
@@ -865,7 +865,7 @@ class DailyBenefitsTasks:
         return f"打卡免费领会员待签到（{sign_date}）"
 
     @staticmethod
-    def _summarize_lottery_item(index: int, item: Dict[str, Any]) -> Dict[str, Any]:
+    def _summarize_lottery_item(index: int, item: dict[str, Any]) -> dict[str, Any]:
         """提取 lottery_v2 中用于排查签到/领取顺序的安全字段。"""
         lottery_v2 = item.get("lottery_v2") or {}
         lottery_list = lottery_v2.get("lottery_list") or []
@@ -895,7 +895,7 @@ class DailyBenefitsTasks:
         }
 
     @staticmethod
-    def _summarize_fragment_item(index: int, item: Dict[str, Any]) -> Dict[str, Any]:
+    def _summarize_fragment_item(index: int, item: dict[str, Any]) -> dict[str, Any]:
         """提取 fragment_collect 中用于排查签到/领取顺序的安全字段。"""
         fragment_collect = item.get("fragment_collect") or {}
         sign_records = fragment_collect.get("sign_records") or []
@@ -920,10 +920,10 @@ class DailyBenefitsTasks:
     @classmethod
     def _build_page_diagnostics(
         cls,
-        page_info: Dict[str, Any],
-        fragment_result: Optional[Dict[str, Any]] = None,
-        lottery_result: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+        page_info: dict[str, Any],
+        fragment_result: Optional[dict[str, Any]] = None,
+        lottery_result: Optional[dict[str, Any]] = None
+    ) -> dict[str, Any]:
         """生成不含 Cookie/Token 的页面状态诊断摘要。"""
         data_list = page_info.get("data", [])
         if not isinstance(data_list, list):
@@ -976,18 +976,18 @@ class DailyBenefitsTasks:
         return diagnostics
 
     @staticmethod
-    def _format_diagnostics(diagnostics: Dict[str, Any]) -> str:
+    def _format_diagnostics(diagnostics: dict[str, Any]) -> str:
         """格式化诊断摘要，保持日志单行输出。"""
         return json.dumps(diagnostics, ensure_ascii=False, default=str, separators=(",", ":"))
 
     def _process_member_trial(
         self,
         api: DailyBenefitsAPI,
-        portal_result: Dict[str, Any],
-        page_info: Dict[str, Any],
+        portal_result: dict[str, Any],
+        page_info: dict[str, Any],
         account_name: str,
-        result: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        result: dict[str, Any]
+    ) -> dict[str, Any]:
         """处理会员免费试用模块"""
         trial_logger = bind_logger(self.logger, account=account_name, step="会员试用")
         member_trial_result = api.get_member_trial_info(page_info)
@@ -1115,11 +1115,11 @@ class DailyBenefitsTasks:
     def _process_fragment_collect_sign_in(
         self,
         api: DailyBenefitsAPI,
-        portal_result: Dict[str, Any],
-        page_info: Dict[str, Any],
+        portal_result: dict[str, Any],
+        page_info: dict[str, Any],
         account_name: str,
-        result: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        result: dict[str, Any]
+    ) -> dict[str, Any]:
         """处理打卡免费领会员模块"""
         checkin_logger = bind_logger(self.logger, account=account_name, step="打卡签到")
         fragment_result = api.get_fragment_collect_info(page_info)
@@ -1215,11 +1215,11 @@ class DailyBenefitsTasks:
     def _process_daily_lottery(
         self,
         api: DailyBenefitsAPI,
-        portal_result: Dict[str, Any],
-        page_info: Dict[str, Any],
+        portal_result: dict[str, Any],
+        page_info: dict[str, Any],
         account_name: str,
-        result: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        result: dict[str, Any]
+    ) -> dict[str, Any]:
         """处理天天抽奖模块"""
         lottery_logger = bind_logger(self.logger, account=account_name, step="天天抽奖")
         daily_lottery_result = api.get_daily_lottery_info(page_info)
@@ -1331,15 +1331,15 @@ class DailyBenefitsTasks:
     def _claim_daily_lottery_reward_if_ready(
         self,
         api: DailyBenefitsAPI,
-        portal_result: Dict[str, Any],
-        page_info: Dict[str, Any],
+        portal_result: dict[str, Any],
+        page_info: dict[str, Any],
         account_name: str,
-        result: Dict[str, Any],
+        result: dict[str, Any],
         *,
         force_claim: bool = False,
-        fragment_result: Optional[Dict[str, Any]] = None,
+        fragment_result: Optional[dict[str, Any]] = None,
         include_skip_message: bool = False
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """当前页面已满足第 7 天条件时领取奖励。"""
         claim_logger = bind_logger(self.logger, account=account_name, step="第7天奖励")
         reward_claim = result["daily_lottery"].setdefault(
@@ -1433,10 +1433,10 @@ class DailyBenefitsTasks:
     def _process_daily_lottery_reward_claim(
         self,
         api: DailyBenefitsAPI,
-        portal_result: Dict[str, Any],
+        portal_result: dict[str, Any],
         account_name: str,
-        result: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        result: dict[str, Any]
+    ) -> dict[str, Any]:
         """刷新签到天数，并在第 7 天领取奖励。"""
         claim_logger = bind_logger(self.logger, account=account_name, step="第7天奖励")
         reward_claim = result["daily_lottery"].setdefault(
@@ -1532,7 +1532,7 @@ class DailyBenefitsTasks:
             "message": message
         }
 
-    def process_account(self, account_info: Dict[str, Any]) -> Dict[str, Any]:
+    def process_account(self, account_info: dict[str, Any]) -> dict[str, Any]:
         """处理单个账号的天天领福利任务"""
         account_name = account_info.get("account_name", "未命名账号")
         account_logger = bind_logger(self.logger, account=account_name)
@@ -1789,7 +1789,7 @@ class DailyBenefitsTasks:
             self._send_notification()
 
     @staticmethod
-    def build_notification_lines(item: Dict[str, Any]) -> List[str]:
+    def build_notification_lines(item: dict[str, Any]) -> list[str]:
         """构造单账号天天领福利通知内容。"""
         lines = [f"    [{DailyBenefitsTasks.page_name}] {item.get('message', '')}"]
 

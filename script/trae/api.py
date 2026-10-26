@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Trae CN 签到 API 模块
 
@@ -22,7 +21,7 @@ Trae CN 签到 API 模块
 import logging
 import sys
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import requests
 
@@ -31,7 +30,7 @@ _script_dir = Path(__file__).resolve().parent.parent
 if str(_script_dir) not in sys.path:
     sys.path.insert(0, str(_script_dir))
 
-from _shared import create_session, request_with_retry, post_and_parse
+from _shared import create_session, post_and_parse, request_with_retry
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +77,7 @@ class TraeAPI:
         # 会话复用 + 连接/5xx 自动重试；签到接口按天幂等，重试安全
         self.session = create_session()
 
-    def _build_headers(self) -> Dict[str, str]:
+    def _build_headers(self) -> dict[str, str]:
         headers = {
             'Authorization': f'Cloud-IDE-JWT {self.access_token}',
             'Accept': 'application/json, text/plain, */*',
@@ -89,7 +88,7 @@ class TraeAPI:
             headers['x-device-id'] = self.device_id
         return headers
 
-    def _post(self, path: str) -> Dict[str, Any]:
+    def _post(self, path: str) -> dict[str, Any]:
         """
         发送 POST 请求并解析统一响应结构
 
@@ -108,7 +107,7 @@ class TraeAPI:
         )
 
     @staticmethod
-    def _parse_status(data: Dict[str, Any]) -> Dict[str, Any]:
+    def _parse_status(data: dict[str, Any]) -> dict[str, Any]:
         """
         解析签到状态响应
 
@@ -134,7 +133,7 @@ class TraeAPI:
             'raw': data,
         }
 
-    def get_checkin_status(self) -> Dict[str, Any]:
+    def get_checkin_status(self) -> dict[str, Any]:
         """
         查询今日签到状态
 
@@ -151,7 +150,7 @@ class TraeAPI:
             }
         return self._parse_status(result['data'])
 
-    def claim_checkin(self) -> Dict[str, Any]:
+    def claim_checkin(self) -> dict[str, Any]:
         """
         领取今日签到积分
 
@@ -195,7 +194,7 @@ GET_TOKEN_PATH = '/cloudide/api/v3/common/GetUserToken'
 LOGIN_PATH = '/cloudide/api/v3/trae/Login'
 
 
-def login_refresh(sessionid: str, timeout: int = 30) -> Dict[str, Any]:
+def login_refresh(sessionid: str, timeout: int = 30) -> dict[str, Any]:
     """
     用长效登录 Cookie 调 /cloudide/api/v3/trae/Login 换取全新 X-Cloudide-Session。
     实测只需 `sessionid` 一个 Cookie（约 60 天有效）即可刷新；浏览器每次打开
@@ -251,7 +250,7 @@ class TraeWebAPI:
         # 换取 JWT 时由服务端回填的账号身份（UserID），用于识别配置里指向同一账号的重复条目
         self.user_id: Optional[str] = None
 
-    def _fetch_jwt(self) -> Dict[str, Any]:
+    def _fetch_jwt(self) -> dict[str, Any]:
         """用 X-Cloudide-Session 换取全新 JWT"""
         headers = {
             'Cookie': f'X-Cloudide-Session={self.session_cookie}',
@@ -299,7 +298,7 @@ class TraeWebAPI:
             self._fetch_jwt()
         return self.user_id
 
-    def _delegate(self, method: str) -> Dict[str, Any]:
+    def _delegate(self, method: str) -> dict[str, Any]:
         """构造临时 TraeAPI 并调用指定方法；JWT 失效时换新重试一次"""
         for attempt in (1, 2):
             if not self._jwt:
@@ -314,10 +313,10 @@ class TraeWebAPI:
             self._jwt = None  # 强制下次换新后重试
         return {'success': False, 'error': '网页令牌异常', 'error_type': 'token_expired'}
 
-    def get_checkin_status(self) -> Dict[str, Any]:
+    def get_checkin_status(self) -> dict[str, Any]:
         """查询今日签到状态"""
         return self._delegate('get_checkin_status')
 
-    def claim_checkin(self) -> Dict[str, Any]:
+    def claim_checkin(self) -> dict[str, Any]:
         """领取今日签到积分"""
         return self._delegate('claim_checkin')

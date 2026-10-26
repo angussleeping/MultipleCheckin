@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 WorkBuddy API模块
 
@@ -15,7 +14,7 @@ WorkBuddy API模块
 import logging
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 # 以便脚本被直接执行时也能 import _shared
 _script_dir = Path(__file__).resolve().parent.parent
@@ -32,7 +31,7 @@ def _is_auth_error(code: Any, message: str) -> bool:
     return code == 401 or '登录' in message or 'token' in message.lower()
 
 
-def _pick_bool(data: Dict[str, Any], snake: str, camel: str, default: bool) -> bool:
+def _pick_bool(data: dict[str, Any], snake: str, camel: str, default: bool) -> bool:
     """从响应中宽松读取布尔值，兼容 true/1/'true' 等写法"""
     raw = data.get(snake, data.get(camel))
     if raw is None:
@@ -50,7 +49,7 @@ def _pick_bool(data: Dict[str, Any], snake: str, camel: str, default: bool) -> b
     return default
 
 
-def _pick_int(data: Dict[str, Any], snake: str, camel: str) -> Optional[int]:
+def _pick_int(data: dict[str, Any], snake: str, camel: str) -> Optional[int]:
     """从响应中宽松读取整数值，兼容下划线和驼峰命名"""
     raw = data.get(snake, data.get(camel))
     if isinstance(raw, bool):
@@ -115,7 +114,7 @@ class WorkBuddyAPI:
         # 令牌被刷新过时置为True，供上层决定是否回写配置文件
         self.token_refreshed = False
 
-    def _build_headers(self) -> Dict[str, str]:
+    def _build_headers(self) -> dict[str, str]:
         """
         构造请求头，与官方 buildHeaders(session) 对齐
 
@@ -139,7 +138,7 @@ class WorkBuddyAPI:
 
         return headers
 
-    def _post(self, path: str, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+    def _post(self, path: str, extra_headers: Optional[dict[str, str]] = None) -> dict[str, Any]:
         """
         发送POST请求并解析统一响应结构
 
@@ -165,7 +164,7 @@ class WorkBuddyAPI:
             auth_error_checker=_is_auth_error,
         )
 
-    def refresh_access_token(self) -> Dict[str, Any]:
+    def refresh_access_token(self) -> dict[str, Any]:
         """
         使用refresh_token换取新的access_token
 
@@ -204,7 +203,7 @@ class WorkBuddyAPI:
             'domain': self.domain,
         }
 
-    def _post_with_retry(self, path: str) -> Dict[str, Any]:
+    def _post_with_retry(self, path: str) -> dict[str, Any]:
         """
         发送POST请求，遇到令牌过期时自动刷新后重试一次
 
@@ -233,7 +232,7 @@ class WorkBuddyAPI:
 
         return self._post(path)
 
-    def get_checkin_status(self) -> Dict[str, Any]:
+    def get_checkin_status(self) -> dict[str, Any]:
         """
         查询今日签到状态
 
@@ -242,7 +241,7 @@ class WorkBuddyAPI:
         Returns:
             Dict[str, Any]: 包含签到状态各字段的结果字典
         """
-        errors: List[str] = []
+        errors: list[str] = []
 
         for path in self.CHECKIN_STATUS_PATHS:
             result = self._post_with_retry(path)
@@ -267,7 +266,7 @@ class WorkBuddyAPI:
         }
 
     @staticmethod
-    def _parse_checkin_status(data: Dict[str, Any]) -> Dict[str, Any]:
+    def _parse_checkin_status(data: dict[str, Any]) -> dict[str, Any]:
         """
         解析签到状态数据，兼容下划线与驼峰两种命名
 
@@ -296,7 +295,7 @@ class WorkBuddyAPI:
             'raw': data,
         }
 
-    def daily_checkin(self) -> Dict[str, Any]:
+    def daily_checkin(self) -> dict[str, Any]:
         """
         执行每日签到
 

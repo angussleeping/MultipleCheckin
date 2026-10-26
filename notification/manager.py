@@ -1,25 +1,24 @@
-# -*- coding: utf-8 -*-
 """青龙面板通知推送管理器"""
 
 import logging
 from functools import partial
 from typing import Optional
 
-from .config_loader import load_config_from_file, get_config_value
 from .channels import (
     bark,
-    server,
     coolpush,
-    qmsg,
-    telegram,
-    feishu,
     dingtalk,
-    qywx,
-    pushplus,
+    feishu,
     gotify,
     ntfy,
     pushdeer,
+    pushplus,
+    qmsg,
+    qywx,
+    server,
+    telegram,
 )
+from .config_loader import get_config_value, load_config_from_file
 
 
 class NotificationManager:

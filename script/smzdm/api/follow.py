@@ -1,9 +1,17 @@
-# -*- coding: utf-8 -*-
 """什么值得买 - 关注用户相关API(自 api.py 拆分, 经 Mixin 组合回 SmzdmAPI)"""
 
 import logging
+import sys
 import time
-from typing import Any, Dict, List, Optional
+from pathlib import Path
+from typing import Any, Optional
+
+# 确保 _shared 可导入(Mixin 独立运行时需要)
+_script_dir = Path(__file__).resolve().parent.parent.parent
+if str(_script_dir) not in sys.path:
+    sys.path.insert(0, str(_script_dir))
+
+from _shared.http_client import request_with_retry
 
 try:
     from .sign_calculator import calculate_sign_from_params
@@ -17,7 +25,7 @@ class FollowMixin:
     """关注用户相关功能: 互动任务/关注/取关"""
     # ==================== 关注用户相关功能 ====================
 
-    def get_follow_user_list(self, page: int = 1) -> Optional[Dict[str, Any]]:
+    def get_follow_user_list(self, page: int = 1) -> Optional[dict[str, Any]]:
         """
         获取被关注用户列表信息
 
@@ -30,7 +38,7 @@ class FollowMixin:
         url = "https://dingyue-api.smzdm.com/tuijian/search_result"
 
         # 获取token
-        token = self._get_token_from_cookie()
+        self._get_token_from_cookie()
 
         # 构建请求参数
         current_time = int(time.time() * 1000)
@@ -205,7 +213,7 @@ class FollowMixin:
             logger.error(f"❌ 取消关注用户请求失败: {str(e)}")
             return False
 
-    def execute_follow_task(self, max_follow_count: int = 5) -> Dict[str, int]:
+    def execute_follow_task(self, max_follow_count: int = 5) -> dict[str, int]:
         """
         执行关注任务（关注用户后立即取消关注）
 
@@ -253,20 +261,20 @@ class FollowMixin:
 
                 # 执行关注
                 if self.follow_user(article_title, user_id):
-                    logger.info(f"    ✅ 关注成功")
+                    logger.info("    ✅ 关注成功")
 
                     # 等待一下再取消关注
                     time.sleep(2)
 
                     # 取消关注
                     if self.unfollow_user(article_title, user_id):
-                        logger.info(f"    ✅ 取消关注成功")
+                        logger.info("    ✅ 取消关注成功")
                         success_count += 1
                     else:
-                        logger.info(f"    ❌ 取消关注失败")
+                        logger.info("    ❌ 取消关注失败")
                         fail_count += 1
                 else:
-                    logger.info(f"    ❌ 关注失败")
+                    logger.info("    ❌ 关注失败")
                     fail_count += 1
 
                 processed_count += 1

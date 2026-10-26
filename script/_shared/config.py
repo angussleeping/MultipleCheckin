@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 统一配置加载与原子写回
 
@@ -11,7 +10,7 @@ import json
 import logging
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +25,7 @@ def get_default_config_path() -> Path:
     return get_project_root() / 'config' / 'token.json'
 
 
-def load_json_config(config_path: Optional[Path] = None) -> Dict[str, Any]:
+def load_json_config(config_path: Optional[Path] = None) -> dict[str, Any]:
     """
     加载 JSON 配置文件,失败时抛出明确异常
 
@@ -41,7 +40,7 @@ def load_json_config(config_path: Optional[Path] = None) -> Dict[str, Any]:
     if not path.exists():
         raise FileNotFoundError(f'配置文件不存在: {path}')
 
-    with open(path, 'r', encoding='utf-8') as f:
+    with open(path, encoding='utf-8') as f:
         return json.load(f)
 
 
@@ -49,8 +48,8 @@ def load_platform_accounts(
     platform: str,
     config_path: Optional[Path] = None,
     *,
-    required_fields: Optional[List[str]] = None,
-) -> List[Dict[str, Any]]:
+    required_fields: Optional[list[str]] = None,
+) -> list[dict[str, Any]]:
     """
     加载指定平台的账号列表
 
@@ -83,7 +82,7 @@ def load_platform_accounts(
 def save_account_fields(
     platform: str,
     account_index: int,
-    updates: Dict[str, Any],
+    updates: dict[str, Any],
     config_path: Optional[Path] = None,
 ) -> bool:
     """

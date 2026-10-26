@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 new Env('WPS签到抽奖');
 cron: 18 10 * * *
@@ -20,7 +19,7 @@ import random
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Tuple, Type
+from typing import Any
 
 # 获取项目根目录,并将根目录与 script/ 目录加入 sys.path
 project_root = Path(__file__).resolve().parent.parent.parent
@@ -43,8 +42,9 @@ from logging_utils import (
     log_page_switch,
     log_startup,
 )
-from notification import NotificationSound
 from task_center import WPSTaskCenterPage
+
+from notification import NotificationSound
 
 
 class WPSMultiPageRunner:
@@ -57,16 +57,16 @@ class WPSMultiPageRunner:
             self.config_path = Path(config_path)
 
         self.logger = setup_logger("wps")
-        self.accounts: List[Dict[str, Any]] = load_platform_accounts("wps", self.config_path)
-        self.account_results: List[Dict[str, Any]] = []
-        self.page_tasks: List[Tuple[str, Type]] = [
+        self.accounts: list[dict[str, Any]] = load_platform_accounts("wps", self.config_path)
+        self.account_results: list[dict[str, Any]] = []
+        self.page_tasks: list[tuple[str, type]] = [
             ("任务中心", WPSTaskCenterPage),
             ("天天领福利", DailyBenefitsTasks),
         ]
-        self.page_runners: List[Tuple[str, Any]] = []
+        self.page_runners: list[tuple[str, Any]] = []
 
     @staticmethod
-    def _is_auth_expired_result(page_result: Dict[str, Any]) -> bool:
+    def _is_auth_expired_result(page_result: dict[str, Any]) -> bool:
         """判断页面结果是否为登录态失效。"""
         if page_result.get("auth_expired"):
             return True
@@ -75,10 +75,10 @@ class WPSMultiPageRunner:
         keywords = ("Token已过期", "ErrNotLogin", "userNotLogin", "未登录", "请重新登录")
         return any(keyword in message for keyword in keywords)
 
-    def _process_account(self, account_index: int, account_info: Dict[str, Any]) -> Dict[str, Any]:
+    def _process_account(self, account_index: int, account_info: dict[str, Any]) -> dict[str, Any]:
         """处理单个账号的所有页面任务"""
         account_name = account_info.get("account_name", "未命名账号")
-        account_result: Dict[str, Any] = {
+        account_result: dict[str, Any] = {
             "account_name": account_name,
             "success": True,
             "message": "",

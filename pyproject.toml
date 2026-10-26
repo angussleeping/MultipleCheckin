@@ -29,6 +29,9 @@ ignore = [
 "script/trae/**" = ["SIM"]
 "script/workbuddy/**" = ["SIM"]
 "script/agentrouter/**" = ["SIM"]
+# 各 main.py / api.py 需先 sys.path.insert 才能导入本地模块,_shared 等依赖
+# 因此模块级 import 不可能全在文件顶部,E402 必须忽略
+"script/**/*.py" = ["E402"]
 
 [tool.mypy]
 python_version = "3.9"

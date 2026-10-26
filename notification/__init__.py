@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 青龙面板通知推送模块
 
@@ -55,8 +54,8 @@ __all__ = [
 
 if __name__ == "__main__":
     """测试推送功能"""
-    import sys
     import logging
+    import sys
 
     # 设置日志
     logging.basicConfig(

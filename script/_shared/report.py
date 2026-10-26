@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 执行结果汇总与推送
 
@@ -9,16 +8,16 @@
 import logging
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 
 
 def build_summary(
-    results: List[Dict[str, Any]],
+    results: list[dict[str, Any]],
     *,
-    extra_stats: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Any]:
+    extra_stats: Optional[dict[str, Any]] = None,
+) -> dict[str, Any]:
     """
     构建执行结果统计
 
@@ -50,8 +49,8 @@ def build_summary(
 
 def render_summary_text(
     platform_name: str,
-    results: List[Dict[str, Any]],
-    summary: Optional[Dict[str, Any]] = None,
+    results: list[dict[str, Any]],
+    summary: Optional[dict[str, Any]] = None,
 ) -> str:
     """
     把结果渲染为推送文本
@@ -95,10 +94,10 @@ def render_summary_text(
 
 def send_summary_notification(
     platform_name: str,
-    results: List[Dict[str, Any]],
+    results: list[dict[str, Any]],
     *,
     title: Optional[str] = None,
-    summary: Optional[Dict[str, Any]] = None,
+    summary: Optional[dict[str, Any]] = None,
     **send_kwargs,
 ) -> bool:
     """

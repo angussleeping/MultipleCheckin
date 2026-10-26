@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Server酱 / Server酱 Turbo 推送渠道"""
 
 import requests

@@ -353,6 +353,14 @@ MultipleCheckin/
 
 ## 📝 更新日志
 
+### 2026-10-26（代码审计优化）
+
+- 🔧 **静态分析清零**：`ruff check` 从 704 条问题降至 0，全部规则通过
+- 🧹 **风格统一**：自动修复 `list[str]` 类型注解 (UP006)、弃用导入 (UP035)、冗余编码声明 (UP009)、未使用 f-string (F541)、未使用导入 (F401)、import 排序 (I001) 等 607 处
+- 🔗 **补全 Mixin 导入**：`smzdm/api/activity.py`、`checkin.py`、`follow.py`、`tasks.py` 四个 Mixin 补上缺失的 `request_with_retry` 导入，修复拆分后的隐式依赖
+- 📦 **项目配置**：pyproject.toml 新增 `script/**/*.py` 的 E402 豁免（脚本需先 `sys.path.insert` 才能导入本地模块）
+- ✅ **测试**：全部 40 个单元测试通过
+
 ### 2026-10-26
 
 - 🏗️ **大规模重构**：抽离 `script/_shared/` 共享基础设施包（日志/HTTP/配置/调度/报告）

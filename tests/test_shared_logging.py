@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """_shared.logging 单元测试"""
 
 import logging
 import sys
 from pathlib import Path
-
-import pytest
 
 # 让 script/_shared 可被 import
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'script'))

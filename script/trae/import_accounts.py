@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Trae CN 账号导入工具与设备 ID 解析
 
@@ -26,7 +25,7 @@ import os
 import re
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Optional
 
 project_root = Path(__file__).resolve().parent.parent.parent
 CONFIG_PATH = project_root / "config" / "token.json"
@@ -90,7 +89,7 @@ def _unpad_pkcs7(data: bytes) -> Optional[bytes]:
     return data[:-pad]
 
 
-def decrypt_trae_auth_envelope(encoded: str) -> Optional[Dict[str, Any]]:
+def decrypt_trae_auth_envelope(encoded: str) -> Optional[dict[str, Any]]:
     """解密客户端 AES 信封格式的登录态，返回 payload JSON；失败返回 None"""
     if not HAS_CRYPTO:
         return None
@@ -114,7 +113,7 @@ def decrypt_trae_auth_envelope(encoded: str) -> Optional[Dict[str, Any]]:
         return None
 
 
-def parse_storage_auth_value(raw_value: str) -> Optional[Dict[str, Any]]:
+def parse_storage_auth_value(raw_value: str) -> Optional[dict[str, Any]]:
     """解析客户端登录态值：明文 JSON 优先，其次 AES 信封（兼容不同客户端版本）"""
     if raw_value.lstrip().startswith('{'):
         try:
@@ -136,9 +135,9 @@ def _warn_no_crypto() -> None:
 # ============ 官方客户端读取 ============
 
 
-def _appdata_roots() -> List[Path]:
+def _appdata_roots() -> list[Path]:
     """返回 %APPDATA% 目录（官方客户端默认安装数据目录所在）"""
-    roots: List[Path] = []
+    roots: list[Path] = []
     if sys.platform == 'win32':
         appdata = os.environ.get('APPDATA')
         if appdata:
@@ -157,7 +156,7 @@ def _appdata_roots() -> List[Path]:
     return roots
 
 
-def find_local_client_storage_paths() -> List[Tuple[str, Path]]:
+def find_local_client_storage_paths() -> list[tuple[str, Path]]:
     """
     定位官方 Trae 客户端 storage.json（含按账号隔离的独立实例目录）
 
@@ -168,7 +167,7 @@ def find_local_client_storage_paths() -> List[Tuple[str, Path]]:
     Returns:
         List[Tuple[str, Path]]: (目录名, storage.json 路径) 列表，不存在返回空
     """
-    results: List[Tuple[str, Path]] = []
+    results: list[tuple[str, Path]] = []
     for root in _appdata_roots():
         for dir_name in APP_DIRS:
             storage = root / dir_name / 'User' / 'globalStorage' / 'storage.json'
@@ -192,8 +191,8 @@ def find_local_client_storage_paths() -> List[Tuple[str, Path]]:
             if storage.is_file():
                 results.append((name, storage))
     # 去重（同一 storage 路径可能因大小写/重复根目录出现两次）
-    seen: List[Path] = []
-    deduped: List[Tuple[str, Path]] = []
+    seen: list[Path] = []
+    deduped: list[tuple[str, Path]] = []
     for dir_name, storage in results:
         if storage in seen:
             continue
@@ -202,10 +201,10 @@ def find_local_client_storage_paths() -> List[Tuple[str, Path]]:
     return deduped
 
 
-def _read_storage_key_value(storage_path: Path, key: str) -> Optional[Dict[str, Any]]:
+def _read_storage_key_value(storage_path: Path, key: str) -> Optional[dict[str, Any]]:
     """读取 storage.json 中指定键的登录态（兼容明文 JSON 与 AES 信封两种格式）"""
     try:
-        with open(storage_path, 'r', encoding='utf-8') as f:
+        with open(storage_path, encoding='utf-8') as f:
             data = json.load(f)
     except (json.JSONDecodeError, OSError):
         return None
@@ -235,7 +234,7 @@ def _read_storage_device_id(storage_path: Path) -> str:
     return digits.group(0) if digits else ''
 
 
-def scan_client_device_pairs() -> Dict[str, str]:
+def scan_client_device_pairs() -> dict[str, str]:
     """
     扫描官方 Trae 客户端，建立 userId → 本机注册设备 ID 的对应关系
 
@@ -247,9 +246,9 @@ def scan_client_device_pairs() -> Dict[str, str]:
     Returns:
         Dict[str, str]: user_id → device_id（仅独立的账号级设备）
     """
-    pairs: Dict[str, str] = {}
+    pairs: dict[str, str] = {}
 
-    def _region_ok(auth: Dict[str, Any]) -> bool:
+    def _region_ok(auth: dict[str, Any]) -> bool:
         region = str(auth.get('AIRegion') or auth.get('userRegion') or '').upper()
         if not region:
             host = str(auth.get('host') or '')
@@ -298,14 +297,14 @@ def _parse_expires_at(value: Any) -> Optional[int]:
     return ts
 
 
-def load_accounts_from_local_clients() -> List[Dict[str, Any]]:
+def load_accounts_from_local_clients() -> list[dict[str, Any]]:
     """
     从官方 Trae 客户端读取当前登录的 CN 账号
 
     Returns:
         List[Dict[str, Any]]: 原始账号数据列表
     """
-    accounts: List[Dict[str, Any]] = []
+    accounts: list[dict[str, Any]] = []
     for dir_name, storage_path in find_local_client_storage_paths():
         auth = _read_storage_key_value(storage_path, AUTH_STORAGE_KEY)
         if not auth:
@@ -345,17 +344,17 @@ def load_accounts_from_local_clients() -> List[Dict[str, Any]]:
 # ============ cockpit-tools 数据目录读取 ============
 
 
-def find_cockpit_data_dirs() -> List[Path]:
+def find_cockpit_data_dirs() -> list[Path]:
     """
     自动探测本机可能存在的 cockpit-tools 数据目录
 
     Returns:
         List[Path]: 包含 Trae 账号数据的候选目录列表
     """
-    candidates: List[Path] = []
+    candidates: list[Path] = []
     home = Path.home()
 
-    roots: List[Path] = []
+    roots: list[Path] = []
     if sys.platform == 'win32':
         for env_key in ('APPDATA', 'LOCALAPPDATA'):
             value = os.environ.get(env_key)
@@ -391,7 +390,7 @@ def find_cockpit_data_dirs() -> List[Path]:
 
 def find_secure_key(source_dir: Path) -> Optional[Path]:
     """为给定账号来源目录查找解密用的本地密钥文件（同 workbuddy 模块策略）"""
-    search_bases: List[Path] = [source_dir]
+    search_bases: list[Path] = [source_dir]
     if source_dir.name == ACCOUNTS_DIR_NAME:
         search_bases.append(source_dir.parent)
     else:
@@ -415,7 +414,7 @@ def find_secure_key(source_dir: Path) -> Optional[Path]:
     return None
 
 
-def decrypt_record(enc: Dict[str, Any], key: bytes) -> Optional[Dict[str, Any]]:
+def decrypt_record(enc: dict[str, Any], key: bytes) -> Optional[dict[str, Any]]:
     """使用本地密钥解密 AES-256-GCM 加密的账号记录"""
     if not HAS_CRYPTO:
         _warn_no_crypto()
@@ -431,7 +430,7 @@ def decrypt_record(enc: Dict[str, Any], key: bytes) -> Optional[Dict[str, Any]]:
         return None
 
 
-def load_accounts_from_cockpit_dir(directory: Path, quiet: bool = False) -> List[Dict[str, Any]]:
+def load_accounts_from_cockpit_dir(directory: Path, quiet: bool = False) -> list[dict[str, Any]]:
     """
     从 cockpit-tools 数据目录读取 Trae 账号（兼容明文与 AES-256-GCM 加密）
 
@@ -455,12 +454,12 @@ def load_accounts_from_cockpit_dir(directory: Path, quiet: bool = False) -> List
             if not quiet:
                 print(f"⚠️  读取密钥失败: {e}")
 
-    accounts: List[Dict[str, Any]] = []
+    accounts: list[dict[str, Any]] = []
     for json_file in sorted(accounts_dir.glob('*.json')):
         if json_file.name == ACCOUNTS_INDEX_FILE or json_file.name.endswith('.bak'):
             continue
         try:
-            with open(json_file, 'r', encoding='utf-8') as f:
+            with open(json_file, encoding='utf-8') as f:
                 data = json.load(f)
         except (json.JSONDecodeError, OSError) as e:
             if not quiet:
@@ -510,12 +509,12 @@ def load_accounts_from_cockpit_dir(directory: Path, quiet: bool = False) -> List
 # ============ 账号合并 ============
 
 
-def account_identity(account: Dict[str, Any]) -> str:
+def account_identity(account: dict[str, Any]) -> str:
     """账号唯一标识（user_id），用于导入去重"""
     return (account.get('user_id') or account.get('email') or account.get('nickname') or '').strip().lower()
 
 
-def _merge_best_expires(account: Dict[str, Any], best_expires: Dict[str, int]) -> bool:
+def _merge_best_expires(account: dict[str, Any], best_expires: dict[str, int]) -> bool:
     """判断候选账号是否为同身份中令牌最新者，是则记录并返回 True"""
     identity = account_identity(account)
     expires = account.get('expires_at')
@@ -530,7 +529,7 @@ def _merge_best_expires(account: Dict[str, Any], best_expires: Dict[str, int]) -
     return False
 
 
-def convert_account(raw: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+def convert_account(raw: dict[str, Any]) -> Optional[dict[str, Any]]:
     """
     将来源账号结构转换为本项目配置结构
 
@@ -547,7 +546,7 @@ def convert_account(raw: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     account_name = raw.get('nickname') or raw.get('email') or raw.get('account_id') or '未命名账号'
 
     # 只保留签到必需字段；region 过滤缺省即 CN，无需落盘
-    account: Dict[str, Any] = {
+    account: dict[str, Any] = {
         'account_name': account_name,
         'user_id': raw.get('user_id', ''),
         'access_token': access_token,
@@ -559,7 +558,7 @@ def convert_account(raw: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     return account
 
 
-def merge_into_config(new_accounts: List[Dict[str, Any]], config_path: Path) -> Dict[str, int]:
+def merge_into_config(new_accounts: list[dict[str, Any]], config_path: Path) -> dict[str, int]:
     """
     将账号合并写入配置文件的 trae 节点
 
@@ -573,14 +572,14 @@ def merge_into_config(new_accounts: List[Dict[str, Any]], config_path: Path) -> 
         Dict[str, int]: 包含 added 和 updated 数量的统计字典
     """
     if config_path.exists():
-        with open(config_path, 'r', encoding='utf-8') as f:
+        with open(config_path, encoding='utf-8') as f:
             config_data = json.load(f)
     else:
         config_path.parent.mkdir(parents=True, exist_ok=True)
         config_data = {}
 
     trae_node = config_data.setdefault('trae', {})
-    existing: List[Dict[str, Any]] = trae_node.setdefault('accounts', [])
+    existing: list[dict[str, Any]] = trae_node.setdefault('accounts', [])
 
     index_map = {}
     for idx, acc in enumerate(existing):
@@ -613,7 +612,7 @@ def merge_into_config(new_accounts: List[Dict[str, Any]], config_path: Path) -> 
     return {'added': added, 'updated': updated}
 
 
-def collect_accounts(quiet: bool = False) -> List[Dict[str, Any]]:
+def collect_accounts(quiet: bool = False) -> list[dict[str, Any]]:
     """
     自动探测本机账号来源并采集 CN 账号（已按 user_id 去重、取令牌最新者）
 
@@ -627,7 +626,7 @@ def collect_accounts(quiet: bool = False) -> List[Dict[str, Any]]:
         List[Dict[str, Any]]: 转换后的账号配置列表，无可用来源时返回空列表
     """
     log = (lambda *a, **k: None) if quiet else print
-    raw_accounts: List[Dict[str, Any]] = []
+    raw_accounts: list[dict[str, Any]] = []
 
     for candidate in find_cockpit_data_dirs():
         found = load_accounts_from_cockpit_dir(candidate, quiet=quiet)
@@ -641,9 +640,9 @@ def collect_accounts(quiet: bool = False) -> List[Dict[str, Any]]:
         raw_accounts.extend(local)
 
     # 同身份账号保留令牌有效期最新者，其次保留来源靠后者
-    accounts: List[Dict[str, Any]] = []
-    best_expires: Dict[str, int] = {}
-    seen: Dict[str, int] = {}
+    accounts: list[dict[str, Any]] = []
+    best_expires: dict[str, int] = {}
+    seen: dict[str, int] = {}
     for raw in raw_accounts:
         converted = convert_account(raw)
         if not converted:
@@ -675,7 +674,7 @@ def collect_accounts(quiet: bool = False) -> List[Dict[str, Any]]:
     return accounts
 
 
-def sync_accounts(config_path: Optional[Path] = None, quiet: bool = False) -> Optional[Dict[str, int]]:
+def sync_accounts(config_path: Optional[Path] = None, quiet: bool = False) -> Optional[dict[str, int]]:
     """
     从本机 cockpit-tools / 官方客户端同步账号到配置文件（签到前的自动刷新入口）
 
@@ -842,10 +841,10 @@ def main():
     print(f"📝 配置文件: {config_path}")
 
 
-def load_accounts_from_json_file(file_path: Path) -> List[Dict[str, Any]]:
+def load_accounts_from_json_file(file_path: Path) -> list[dict[str, Any]]:
     """从单个 JSON 文件读取账号，支持单对象、数组以及 {"accounts": [...]} 结构"""
     try:
-        with open(file_path, 'r', encoding='utf-8') as f:
+        with open(file_path, encoding='utf-8') as f:
             data = json.load(f)
     except (json.JSONDecodeError, OSError) as e:
         print(f"❌ 读取文件失败: {e}")
@@ -891,11 +890,11 @@ def load_accounts_from_json_file(file_path: Path) -> List[Dict[str, Any]]:
     return result
 
 
-def _dedupe_accounts(accounts: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def _dedupe_accounts(accounts: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """按 user_id 去重，保留 expires_at 最新者"""
-    result: List[Dict[str, Any]] = []
-    best_expires: Dict[str, int] = {}
-    seen: Dict[str, int] = {}
+    result: list[dict[str, Any]] = []
+    best_expires: dict[str, int] = {}
+    seen: dict[str, int] = {}
     for account in accounts:
         identity = account_identity(account)
         if identity:

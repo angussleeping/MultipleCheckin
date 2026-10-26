@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 WorkBuddy账号导入工具
 
@@ -41,7 +40,7 @@ import sqlite3
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 project_root = Path(__file__).resolve().parent.parent.parent
 CONFIG_PATH = project_root / "config" / "token.json"
@@ -99,7 +98,7 @@ def find_official_client_db() -> Optional[Path]:
     Returns:
         Optional[Path]: state.vscdb 路径，未找到返回 None
     """
-    roots: List[Path] = []
+    roots: list[Path] = []
     if sys.platform == 'win32':
         appdata = os.environ.get('APPDATA') or str(Path.home() / 'AppData' / 'Roaming')
         roots.append(Path(appdata) / 'WorkBuddy')
@@ -245,7 +244,7 @@ def _pick_local_token(value: Any) -> Optional[str]:
     return None
 
 
-def account_from_official_secret(secret: str) -> Optional[Dict[str, Any]]:
+def account_from_official_secret(secret: str) -> Optional[dict[str, Any]]:
     """
     从解密后的 secret 提取账号信息（对齐 cockpit-tools build_local_import_payload）
 
@@ -282,7 +281,7 @@ def account_from_official_secret(secret: str) -> Optional[Dict[str, Any]]:
     account = root.get('account') if isinstance(root.get('account'), dict) else {}
     auth = root.get('auth') if isinstance(root.get('auth'), dict) else {}
 
-    def pick(obj: Dict[str, Any], *keys: str) -> Optional[str]:
+    def pick(obj: dict[str, Any], *keys: str) -> Optional[str]:
         for key in keys:
             v = obj.get(key)
             if isinstance(v, str) and v.strip():
@@ -299,7 +298,7 @@ def account_from_official_secret(secret: str) -> Optional[Dict[str, Any]]:
                      or pick(auth, 'refreshToken', 'refresh_token'))
     domain = pick(root, 'domain') or pick(auth, 'domain')
 
-    raw: Dict[str, Any] = {
+    raw: dict[str, Any] = {
         'nickname': nickname or email,
         'email': email,
         'access_token': raw_token,
@@ -315,7 +314,7 @@ def account_from_official_secret(secret: str) -> Optional[Dict[str, Any]]:
     return raw
 
 
-def load_accounts_from_official_client(quiet: bool = False) -> List[Dict[str, Any]]:
+def load_accounts_from_official_client(quiet: bool = False) -> list[dict[str, Any]]:
     """
     从官方 WorkBuddy 客户端读取当前登录账号
     （对齐 cockpit-tools import_payload_from_local，单账号）
@@ -367,7 +366,7 @@ def find_new_auth_file() -> Optional[Path]:
 
 def _find_client_executable() -> Optional[Path]:
     """定位官方 WorkBuddy 客户端可执行文件（用于索取字段加密密钥，可用 WORKBUDDY_CLIENT_EXE 覆盖）"""
-    candidates: List[Path] = []
+    candidates: list[Path] = []
     override = os.environ.get('WORKBUDDY_CLIENT_EXE')
     if override:
         candidates.append(Path(override))
@@ -460,7 +459,7 @@ def _envelope_aad(key_id: str) -> bytes:
     return aad
 
 
-def decrypt_envelope(wrapper: Dict[str, Any], key: bytes) -> str:
+def decrypt_envelope(wrapper: dict[str, Any], key: bytes) -> str:
     """
     解密单个 {"$wbEncrypted":1,"envelope":"..."} 信封
 
@@ -508,7 +507,7 @@ def _decrypt_session(node: Any, key: bytes) -> Any:
     return node
 
 
-def _pick_str(data: Dict[str, Any], *keys: str) -> Optional[str]:
+def _pick_str(data: dict[str, Any], *keys: str) -> Optional[str]:
     """按顺序取第一个非空字符串字段"""
     for key in keys:
         value = data.get(key)
@@ -517,7 +516,7 @@ def _pick_str(data: Dict[str, Any], *keys: str) -> Optional[str]:
     return None
 
 
-def load_accounts_from_auth_file(auth_file: Path, quiet: bool = False) -> List[Dict[str, Any]]:
+def load_accounts_from_auth_file(auth_file: Path, quiet: bool = False) -> list[dict[str, Any]]:
     """
     读取新版客户端登录态文件，提取当前登录账号
 
@@ -561,7 +560,7 @@ def load_accounts_from_auth_file(auth_file: Path, quiet: bool = False) -> List[D
     uid = _pick_str(account, 'uid', 'id')
     nickname = _pick_str(account, 'nickname', 'name')
 
-    raw: Dict[str, Any] = {
+    raw: dict[str, Any] = {
         'nickname': nickname or uid or '未命名账号',
         'email': nickname or uid or 'unknown',
         'access_token': access_token,
@@ -576,18 +575,18 @@ def load_accounts_from_auth_file(auth_file: Path, quiet: bool = False) -> List[D
     return [raw]
 
 
-def find_cockpit_data_dirs() -> List[Path]:
+def find_cockpit_data_dirs() -> list[Path]:
     """
     自动探测本机可能存在的 cockpit-tools 数据目录
 
     Returns:
         List[Path]: 包含 WorkBuddy 账号数据的候选目录列表
     """
-    candidates: List[Path] = []
+    candidates: list[Path] = []
     home = Path.home()
 
     # 各平台应用数据根目录
-    roots: List[Path] = []
+    roots: list[Path] = []
     if sys.platform == 'win32':
         for env_key in ('APPDATA', 'LOCALAPPDATA'):
             value = os.environ.get(env_key)
@@ -634,7 +633,7 @@ def find_secure_key(source_dir: Path) -> Optional[Path]:
     Returns:
         Optional[Path]: 密钥文件路径，未找到返回 None
     """
-    search_bases: List[Path] = [source_dir]
+    search_bases: list[Path] = [source_dir]
     if source_dir.name == ACCOUNTS_DIR_NAME:
         search_bases.append(source_dir.parent)
     else:
@@ -659,7 +658,7 @@ def find_secure_key(source_dir: Path) -> Optional[Path]:
     return None
 
 
-def decrypt_record(enc: Dict[str, Any], key: bytes) -> Optional[Dict[str, Any]]:
+def decrypt_record(enc: dict[str, Any], key: bytes) -> Optional[dict[str, Any]]:
     """
     使用本地密钥解密 AES-256-GCM 加密的账号记录
 
@@ -685,7 +684,7 @@ def decrypt_record(enc: Dict[str, Any], key: bytes) -> Optional[Dict[str, Any]]:
         return None
 
 
-def load_accounts_from_dir(directory: Path, quiet: bool = False) -> List[Dict[str, Any]]:
+def load_accounts_from_dir(directory: Path, quiet: bool = False) -> list[dict[str, Any]]:
     """
     从目录中读取 WorkBuddy 账号详情
 
@@ -715,12 +714,12 @@ def load_accounts_from_dir(directory: Path, quiet: bool = False) -> List[Dict[st
             if not quiet:
                 print(f"⚠️  读取密钥失败: {e}")
 
-    accounts: List[Dict[str, Any]] = []
+    accounts: list[dict[str, Any]] = []
     for json_file in sorted(accounts_dir.glob('*.json')):
         if json_file.name == ACCOUNTS_INDEX_FILE:
             continue
         try:
-            with open(json_file, 'r', encoding='utf-8') as f:
+            with open(json_file, encoding='utf-8') as f:
                 data = json.load(f)
         except (json.JSONDecodeError, OSError) as e:
             if not quiet:
@@ -743,7 +742,7 @@ def load_accounts_from_dir(directory: Path, quiet: bool = False) -> List[Dict[st
     return accounts
 
 
-def load_accounts_from_file(file_path: Path) -> List[Dict[str, Any]]:
+def load_accounts_from_file(file_path: Path) -> list[dict[str, Any]]:
     """
     从单个 JSON 文件读取账号，支持单对象、数组以及 {"accounts": [...]} 结构
 
@@ -754,7 +753,7 @@ def load_accounts_from_file(file_path: Path) -> List[Dict[str, Any]]:
         List[Dict[str, Any]]: 原始账号数据列表
     """
     try:
-        with open(file_path, 'r', encoding='utf-8') as f:
+        with open(file_path, encoding='utf-8') as f:
             data = json.load(f)
     except (json.JSONDecodeError, OSError) as e:
         print(f"❌ 读取文件失败: {e}")
@@ -783,7 +782,7 @@ def load_accounts_from_file(file_path: Path) -> List[Dict[str, Any]]:
     return [item for item in data if isinstance(item, dict) and item.get('access_token')]
 
 
-def load_accounts_from_path(source: Path, quiet: bool = False) -> List[Dict[str, Any]]:
+def load_accounts_from_path(source: Path, quiet: bool = False) -> list[dict[str, Any]]:
     """
     按路径形态分派读取账号：目录（cockpit-tools / 登录态目录）、登录态文件、账号 JSON 文件
 
@@ -810,7 +809,7 @@ def load_accounts_from_path(source: Path, quiet: bool = False) -> List[Dict[str,
     return load_accounts_from_file(source)
 
 
-def convert_account(raw: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+def convert_account(raw: dict[str, Any]) -> Optional[dict[str, Any]]:
     """
     将 cockpit-tools 账号结构转换为本项目配置结构
 
@@ -826,7 +825,7 @@ def convert_account(raw: Dict[str, Any]) -> Optional[Dict[str, Any]]:
 
     account_name = raw.get('nickname') or raw.get('email') or raw.get('id') or '未命名账号'
 
-    account: Dict[str, Any] = {
+    account: dict[str, Any] = {
         'account_name': account_name,
         'access_token': access_token,
     }
@@ -844,7 +843,7 @@ def convert_account(raw: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     return account
 
 
-def account_identity(account: Dict[str, Any]) -> str:
+def account_identity(account: dict[str, Any]) -> str:
     """
     生成账号唯一标识，用于导入时去重
 
@@ -857,7 +856,7 @@ def account_identity(account: Dict[str, Any]) -> str:
     return (account.get('uid') or account.get('email') or account.get('account_name') or '').strip().lower()
 
 
-def merge_into_config(new_accounts: List[Dict[str, Any]], config_path: Path) -> Dict[str, int]:
+def merge_into_config(new_accounts: list[dict[str, Any]], config_path: Path) -> dict[str, int]:
     """
     将账号合并写入配置文件的 workbuddy 节点
 
@@ -871,14 +870,14 @@ def merge_into_config(new_accounts: List[Dict[str, Any]], config_path: Path) -> 
         Dict[str, int]: 包含added和updated数量的统计字典
     """
     if config_path.exists():
-        with open(config_path, 'r', encoding='utf-8') as f:
+        with open(config_path, encoding='utf-8') as f:
             config_data = json.load(f)
     else:
         config_path.parent.mkdir(parents=True, exist_ok=True)
         config_data = {}
 
     workbuddy_node = config_data.setdefault('workbuddy', {})
-    existing: List[Dict[str, Any]] = workbuddy_node.setdefault('accounts', [])
+    existing: list[dict[str, Any]] = workbuddy_node.setdefault('accounts', [])
 
     index_map = {account_identity(acc): idx for idx, acc in enumerate(existing) if account_identity(acc)}
 
@@ -907,7 +906,7 @@ def merge_into_config(new_accounts: List[Dict[str, Any]], config_path: Path) -> 
     return {'added': added, 'updated': updated}
 
 
-def collect_accounts(quiet: bool = False) -> List[Dict[str, Any]]:
+def collect_accounts(quiet: bool = False) -> list[dict[str, Any]]:
     """
     自动探测本机账号来源并采集账号（已转换、去重）
 
@@ -922,7 +921,7 @@ def collect_accounts(quiet: bool = False) -> List[Dict[str, Any]]:
         List[Dict[str, Any]]: 转换后的账号配置列表，无可用来源时返回空列表
     """
     log = (lambda *a, **k: None) if quiet else print
-    raw_accounts: List[Dict[str, Any]] = []
+    raw_accounts: list[dict[str, Any]] = []
 
     for candidate in find_cockpit_data_dirs():
         found = load_accounts_from_dir(candidate, quiet=quiet)
@@ -942,8 +941,8 @@ def collect_accounts(quiet: bool = False) -> List[Dict[str, Any]]:
             log(f"📂 来源: 新版客户端登录态 (发现 {len(new_official)} 个账号)")
             raw_accounts.extend(new_official)
 
-    accounts: List[Dict[str, Any]] = []
-    seen: Dict[str, int] = {}
+    accounts: list[dict[str, Any]] = []
+    seen: dict[str, int] = {}
     for raw in raw_accounts:
         converted = convert_account(raw)
         if not converted:
@@ -980,8 +979,8 @@ def main():
 
         print(f"📂 来源: {source}")
 
-        accounts: List[Dict[str, Any]] = []
-        seen: Dict[str, int] = {}
+        accounts: list[dict[str, Any]] = []
+        seen: dict[str, int] = {}
         for raw in raw_accounts:
             converted = convert_account(raw)
             if not converted:

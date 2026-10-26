@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Qmsg酱 推送渠道"""
 
 import requests

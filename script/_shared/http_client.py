@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 统一 HTTP 客户端
 
@@ -7,22 +6,21 @@
 避免每个平台重复实现 Session 初始化和重试逻辑。
 """
 
-from typing import Any, Callable, Dict, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Union
 
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-
-DEFAULT_TIMEOUT: Tuple[int, int] = (5, 30)  # (connect, read)
+DEFAULT_TIMEOUT: tuple[int, int] = (5, 30)  # (connect, read)
 
 
 def create_session(
     *,
     retries: int = 3,
     backoff_factor: float = 0.5,
-    status_forcelist: Tuple[int, ...] = (429, 500, 502, 503, 504),
-    allowed_methods: Tuple[str, ...] = ('GET', 'POST', 'PUT', 'DELETE'),
+    status_forcelist: tuple[int, ...] = (429, 500, 502, 503, 504),
+    allowed_methods: tuple[str, ...] = ('GET', 'POST', 'PUT', 'DELETE'),
     default_headers: Optional[dict] = None,
 ) -> requests.Session:
     """
@@ -64,7 +62,7 @@ def request_with_retry(
     method: str,
     url: str,
     *,
-    timeout: Union[int, Tuple[int, int], None] = None,
+    timeout: Union[int, tuple[int, int], None] = None,
     **kwargs,
 ) -> requests.Response:
     """
@@ -89,15 +87,15 @@ def post_and_parse(
     url: str,
     *,
     path_hint: str,
-    headers: Optional[Dict[str, str]] = None,
-    timeout: Union[int, Tuple[int, int], None] = None,
+    headers: Optional[dict[str, str]] = None,
+    timeout: Union[int, tuple[int, int], None] = None,
     payload: Optional[dict] = None,
     require_object_body: bool = False,
     require_data_field: bool = False,
-    data_getter: Optional[Callable[[Dict[str, Any]], Any]] = None,
+    data_getter: Optional[Callable[[dict[str, Any]], Any]] = None,
     auth_error_checker: Optional[Callable[[Any, str], bool]] = None,
     unauthorized_error: str = '令牌已失效 (http=401)',
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     发送 POST 请求并按「code == 0 为成功」的统一约定解析响应
 

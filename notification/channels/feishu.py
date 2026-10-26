@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """飞书机器人 推送渠道"""
 
 import requests

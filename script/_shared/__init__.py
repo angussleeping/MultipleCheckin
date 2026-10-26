@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 共享基础设施包
 
@@ -11,11 +10,11 @@
 - report: 结果汇总与推送
 """
 
-from .logging import setup_logger, SensitiveDataFilter
-from .http_client import create_session, request_with_retry, post_and_parse
-from .config import load_platform_accounts, save_account_fields, load_json_config
-from .runner import run_accounts, apply_startup_jitter
+from .config import load_json_config, load_platform_accounts, save_account_fields
+from .http_client import create_session, post_and_parse, request_with_retry
+from .logging import SensitiveDataFilter, setup_logger
 from .report import build_summary, send_summary_notification
+from .runner import apply_startup_jitter, run_accounts
 
 __all__ = [
     'setup_logger',

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 顺丰快递API模块
 
@@ -12,12 +11,11 @@ import os
 import time
 from dataclasses import dataclass
 from http.cookies import SimpleCookie
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 from urllib.parse import unquote
 
 import execjs
 import requests
-
 from _shared.http_client import create_session, request_with_retry
 
 logger = logging.getLogger('sf')
@@ -31,7 +29,7 @@ class ShareLoginInfo:
     user_id: str
     token: str
     cookies: str
-    raw: Dict[str, Any]
+    raw: dict[str, Any]
     error: str = ""
 
 
@@ -94,14 +92,14 @@ class SFExpressAPI:
     def _init_js(self) -> None:
         """初始化JavaScript环境"""
         try:
-            with open(self.js_file_path, 'r', encoding='utf-8') as f:
+            with open(self.js_file_path, encoding='utf-8') as f:
                 js_code = f.read()
             self.js_context = execjs.compile(js_code)
         except Exception as e:
             logger.error(f"初始化JavaScript环境失败: {e}")
             self.js_context = None
 
-    def get_sw8(self, url_path: str) -> Optional[Dict[str, Any]]:
+    def get_sw8(self, url_path: str) -> Optional[dict[str, Any]]:
         """调用JavaScript中的get_sw8函数"""
         if self.js_context is None:
             raise RuntimeError("JavaScript context not initialized")
@@ -190,7 +188,7 @@ class SFExpressAPI:
         )
 
     @staticmethod
-    def _get_set_cookie_headers(response: requests.Response) -> List[str]:
+    def _get_set_cookie_headers(response: requests.Response) -> list[str]:
         """获取所有Set-Cookie头"""
         if hasattr(response.raw, "headers"):
             raw_headers = response.raw.headers
@@ -218,7 +216,7 @@ class SFExpressAPI:
 
         return ""
 
-    def _build_headers(self, url_path: str, referer: str, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, str]:
+    def _build_headers(self, url_path: str, referer: str, extra_headers: Optional[dict[str, str]] = None) -> dict[str, str]:
         """构建通用请求头"""
         timestamp = str(int(time.time() * 1000))
         sw8_data = self.get_sw8(url_path)
@@ -237,7 +235,7 @@ class SFExpressAPI:
 
         return headers
 
-    def _post_json(self, url_path: str, data: Dict[str, Any], referer: str, error_message: str, extra_headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+    def _post_json(self, url_path: str, data: dict[str, Any], referer: str, error_message: str, extra_headers: Optional[dict[str, str]] = None) -> dict[str, Any]:
         """发送POST请求并返回JSON结果"""
         url = f"{self.base_url}{url_path}"
         headers = self._build_headers(url_path, referer, extra_headers)
@@ -252,7 +250,7 @@ class SFExpressAPI:
                 "message": error_message
             }
 
-    def query_point_task_and_sign(self, channel_type: str = "1", device_id: str = None) -> Dict[str, Any]:
+    def query_point_task_and_sign(self, channel_type: str = "1", device_id: str = None) -> dict[str, Any]:
         """
         查询积分任务和签到信息
 
@@ -271,7 +269,7 @@ class SFExpressAPI:
         referer = "https://mcs-mimp-web.sf-express.com/superWelfare?citycode=&cityname=&tab=0"
         return self._post_json(url_path, data, referer, "请求失败")
 
-    def finish_task(self, task_code: str) -> Dict[str, Any]:
+    def finish_task(self, task_code: str) -> dict[str, Any]:
         """
         完成任务接口
 
@@ -292,7 +290,7 @@ class SFExpressAPI:
         referer = "https://mcs-mimp-web.sf-express.com/home?from=qqjrwzx515&WC_AC_ID=111&WC_REPORT=111"
         return self._post_json(url_path, data, referer, "完成任务请求失败", extra_headers)
 
-    def fetch_tasks_reward(self, channel_type: str = "1", device_id: str = None) -> Dict[str, Any]:
+    def fetch_tasks_reward(self, channel_type: str = "1", device_id: str = None) -> dict[str, Any]:
         """
         获取任务奖励接口
 
@@ -315,7 +313,7 @@ class SFExpressAPI:
         referer = "https://mcs-mimp-web.sf-express.com/superWelfare?citycode=&cityname=&tab=0"
         return self._post_json(url_path, data, referer, "获取任务奖励请求失败", extra_headers)
 
-    def automatic_sign_fetch_package(self, come_from: str = "vioin", channel_from: str = "SFAPP") -> Dict[str, Any]:
+    def automatic_sign_fetch_package(self, come_from: str = "vioin", channel_from: str = "SFAPP") -> dict[str, Any]:
         """
         自动签到获取礼包接口
 
@@ -345,7 +343,7 @@ class SFExpressAPI:
         )
         return self._post_json(url_path, data, referer, "自动签到获取礼包请求失败", extra_headers)
 
-    def query_user_info(self) -> Dict[str, Any]:
+    def query_user_info(self) -> dict[str, Any]:
         """
         查询会员积分信息
 

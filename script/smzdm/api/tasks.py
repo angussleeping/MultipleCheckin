@@ -1,14 +1,22 @@
-# -*- coding: utf-8 -*-
 """什么值得买 - 任务执行相关API(自 api.py 拆分, 经 Mixin 组合回 SmzdmAPI)"""
 
 import logging
+import sys
 import time
-from typing import Any, Dict, List, Optional
+from pathlib import Path
+from typing import Any, Optional
+
+# 确保 _shared 可导入(Mixin 独立运行时需要)
+_script_dir = Path(__file__).resolve().parent.parent.parent
+if str(_script_dir) not in sys.path:
+    sys.path.insert(0, str(_script_dir))
+
+from _shared.http_client import request_with_retry
 
 try:
-    from .sign_calculator import calculate_sign_from_params, calculate_sign
+    from .sign_calculator import calculate_sign_from_params
 except ImportError:  # 无包上下文(直接运行)时回退为同级导入
-    from sign_calculator import calculate_sign_from_params, calculate_sign
+    from sign_calculator import calculate_sign_from_params
 
 logger = logging.getLogger('smzdm')
 
@@ -73,7 +81,7 @@ class TasksMixin:
             data = response.json()
 
             if data.get('error_code') == '0' or data.get('error_code') == 0:
-                logger.info(f"✅ 浏览文章任务完成成功")
+                logger.info("✅ 浏览文章任务完成成功")
                 return True
             else:
                 logger.error(f"❌ 浏览文章任务失败: {data.get('error_msg', '未知错误')}")
@@ -109,7 +117,7 @@ class TasksMixin:
                     logger.info(f"✅ 成功获取channel_id: {channel_id}")
                     return channel_id
                 else:
-                    logger.error(f"响应中没有找到channel_id")
+                    logger.error("响应中没有找到channel_id")
                     return None
             else:
                 logger.error(f"❌ 获取文章信息失败: {data.get('error_msg', '未知错误')}")
@@ -136,7 +144,7 @@ class TasksMixin:
         # 通过article_id获取channel_id
         channel_id = self.get_article_channel_id(article_id)
         if channel_id is None:
-            logger.error(f"无法获取文章的channel_id，任务失败")
+            logger.error("无法获取文章的channel_id，任务失败")
             return False
 
         url = f"{self.USER_API_URL}/favorites/create"
@@ -183,7 +191,7 @@ class TasksMixin:
             data = response.json()
 
             if data.get('error_code') == '0' or data.get('error_code') == 0:
-                logger.info(f"✅ 收藏文章任务完成成功")
+                logger.info("✅ 收藏文章任务完成成功")
                 return True
             else:
                 logger.error(f"❌ 收藏文章任务失败: {data.get('error_msg', '未知错误')}")
@@ -210,7 +218,7 @@ class TasksMixin:
         # 通过article_id获取channel_id
         channel_id = self.get_article_channel_id(article_id)
         if channel_id is None:
-            logger.error(f"无法获取文章的channel_id，任务失败")
+            logger.error("无法获取文章的channel_id，任务失败")
             return False
 
         url = f"{self.USER_API_URL}/rating/like_create"
@@ -280,7 +288,7 @@ class TasksMixin:
             data = response.json()
 
             if data.get('error_code') == '0' or data.get('error_code') == 0:
-                logger.info(f"✅ 点赞文章任务完成成功")
+                logger.info("✅ 点赞文章任务完成成功")
                 return True
             else:
                 logger.error(f"❌ 点赞文章任务失败: {data.get('error_msg', '未知错误')}")
@@ -346,7 +354,7 @@ class TasksMixin:
             data = response.json()
 
             if data.get('error_code') == '0' or data.get('error_code') == 0:
-                logger.info(f"✅ 分享众测招募任务完成成功")
+                logger.info("✅ 分享众测招募任务完成成功")
                 return True
             else:
                 logger.error(f"❌ 分享众测招募任务失败: {data.get('error_msg', '未知错误')}")
@@ -355,7 +363,7 @@ class TasksMixin:
             logger.error(f"❌ 分享众测招募任务请求失败: {str(e)}")
             return False
 
-    def execute_share_task(self, task: Dict[str, Any]) -> bool:
+    def execute_share_task(self, task: dict[str, Any]) -> bool:
         """
         执行分享众测招募任务
 
@@ -417,7 +425,7 @@ class TasksMixin:
                 success_count += 1
                 logger.info(f"    ✅ 分享成功 (进度: {success_count}/{remaining_count})")
             else:
-                logger.info(f"    ❌ 分享失败")
+                logger.info("    ❌ 分享失败")
 
             # 分享间隔
             if success_count < remaining_count:

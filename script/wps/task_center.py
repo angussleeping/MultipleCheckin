@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 new Env('WPS任务中心');
 cron: 1 1 1 1 1
@@ -24,7 +23,7 @@ import random
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 # 获取项目根目录,并将根目录与 script/ 目录加入 sys.path
 project_root = Path(__file__).resolve().parent.parent.parent
@@ -41,6 +40,7 @@ from _shared import (
 )
 from api import WPSAPI
 from logging_utils import bind_logger, log_page_switch, log_task_result
+
 from notification import NotificationSound
 
 
@@ -56,8 +56,8 @@ class WPSTaskCenterPage:
             self.config_path = Path(config_path)
 
         self.enable_notification = enable_notification
-        self.accounts: List[Dict[str, Any]] = []
-        self.account_results: List[Dict[str, Any]] = []
+        self.accounts: list[dict[str, Any]] = []
+        self.account_results: list[dict[str, Any]] = []
         self.logger = self._setup_logger()
         if load_accounts:
             self._init_accounts()
@@ -74,7 +74,7 @@ class WPSTaskCenterPage:
         keywords = ("Token已过期", "ErrNotLogin", "userNotLogin", "未登录", "请重新登录")
         return any(keyword in str(message) for keyword in keywords)
 
-    def process_account(self, account_info: Dict[str, Any]) -> Dict[str, Any]:
+    def process_account(self, account_info: dict[str, Any]) -> dict[str, Any]:
         """处理单个账号的任务中心任务"""
         account_name = account_info.get("account_name", "未命名账号")
         account_logger = bind_logger(self.logger, account=account_name)
@@ -166,16 +166,15 @@ class WPSTaskCenterPage:
             max_lottery_limit = account_info.get("max_lottery_limit")
             if max_lottery_limit is None:
                 max_lottery_limit = default_max_lottery
-                is_custom_limit = False
             else:
-                is_custom_limit = True
+                pass
 
             actual_lottery_times = min(lottery_times, max_lottery_limit)
             if lottery_times > 0:
                 lottery_results = []
                 prize_list = []
 
-                for index in range(actual_lottery_times):
+                for _index in range(actual_lottery_times):
                     delay = random.uniform(1, 3)
                     time.sleep(delay)
 
@@ -245,7 +244,7 @@ class WPSTaskCenterPage:
         return result
 
     @staticmethod
-    def build_notification_lines(result: Dict[str, Any]) -> List[str]:
+    def build_notification_lines(result: dict[str, Any]) -> list[str]:
         """构造单账号任务中心通知内容。"""
         lines = [f"    [{WPSTaskCenterPage.page_name}] {result.get('message', '')}"]
 
@@ -307,7 +306,7 @@ class WPSTaskCenterPage:
         self.logger.info("执行成功: %s", summary["success"])
         self.logger.info("执行失败: %s", summary["failed"])
 
-        prize_summary: Dict[str, int] = {}
+        prize_summary: dict[str, int] = {}
         total_attempts = 0
         total_successful_draws = 0
 

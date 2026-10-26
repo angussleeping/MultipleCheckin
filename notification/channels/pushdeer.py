@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """PushDeer 推送渠道"""
 
 import requests

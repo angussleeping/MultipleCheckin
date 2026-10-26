@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 new Env('WorkBuddy签到');
 cron: 36 3 * * *
@@ -22,7 +21,7 @@ Date: 2026-08-03
 import logging
 import sys
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 # 项目根目录: 供 notification 模块导入
 project_root = Path(__file__).resolve().parent.parent.parent
@@ -40,6 +39,7 @@ from _shared import (
     setup_logger,
 )
 from api import WorkBuddyAPI
+
 from notification import NotificationSound
 
 
@@ -59,8 +59,8 @@ class WorkBuddyTasks:
             self.config_path = Path(config_path)
 
         self.logger = setup_logger('workbuddy')
-        self.accounts: List[Dict[str, Any]] = load_platform_accounts('workbuddy', self.config_path)
-        self.account_results: List[Dict[str, Any]] = []
+        self.accounts: list[dict[str, Any]] = load_platform_accounts('workbuddy', self.config_path)
+        self.account_results: list[dict[str, Any]] = []
 
     def _save_refreshed_token(self, account_index: int, api: WorkBuddyAPI):
         """
@@ -81,7 +81,7 @@ class WorkBuddyTasks:
         else:
             self.logger.warning("⚠️ 回写令牌失败")
 
-    def process_account(self, account_index: int, account_info: Dict[str, Any]) -> Dict[str, Any]:
+    def process_account(self, account_index: int, account_info: dict[str, Any]) -> dict[str, Any]:
         """
         处理单个账号的签到任务
 

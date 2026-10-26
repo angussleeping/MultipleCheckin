@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """企业微信推送渠道（群机器人 + 应用消息）"""
 
 import requests

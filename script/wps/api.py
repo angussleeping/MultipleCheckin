@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 WPS API模块
 
@@ -7,15 +6,16 @@ WPS API模块
 """
 
 import base64
-import time
-import random
-import string
-import requests
 import json
 import logging
+import random
+import string
 import sys
+import time
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Optional
+
+import requests
 from Crypto.Cipher import AES, PKCS1_v1_5
 from Crypto.PublicKey import RSA
 from Crypto.Util.Padding import pad
@@ -138,7 +138,7 @@ class WPSAPI:
         self.session = create_session()
 
     @staticmethod
-    def _parse_cookies(cookie_str: str) -> Dict[str, str]:
+    def _parse_cookies(cookie_str: str) -> dict[str, str]:
         """
         解析Cookie字符串为字典
 
@@ -156,7 +156,7 @@ class WPSAPI:
         return cookies
 
     def get_user_info(self, activity_number: str = "HD2025031821201822",
-                      page_number: str = "YM2025041617143388") -> Dict:
+                      page_number: str = "YM2025041617143388") -> dict:
         """
         获取用户个人信息，包括抽奖次数和积分
 
@@ -283,7 +283,7 @@ class WPSAPI:
             }
 
 
-    def get_encrypt_key(self) -> Dict:
+    def get_encrypt_key(self) -> dict:
         """
         获取RSA加密公钥
 
@@ -339,7 +339,7 @@ class WPSAPI:
                 'error': error_msg
             }
 
-    def generate_crypto_data(self, public_key_base64: str, user_id: int, platform: int = 64) -> Dict:
+    def generate_crypto_data(self, public_key_base64: str, user_id: int, platform: int = 64) -> dict:
         """
         生成加密数据和token
 
@@ -387,7 +387,7 @@ class WPSAPI:
             "aesKey": aes_key
         }
 
-    def sign_in(self, user_id: int) -> Dict:
+    def sign_in(self, user_id: int) -> dict:
         """
         执行签到
 
@@ -512,7 +512,7 @@ class WPSAPI:
                     page_number: str = "YM2025041617143388",
                     component_number: str = "ZJ2025092916515917",
                     component_node_id: str = "FN1762346087mJlk",
-                    session_id: int = 2) -> Dict:
+                    session_id: int = 2) -> dict:
             """
             执行抽奖
             Args:

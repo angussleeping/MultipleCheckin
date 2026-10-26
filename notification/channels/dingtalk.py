@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """钉钉机器人 推送渠道"""
 
 import base64

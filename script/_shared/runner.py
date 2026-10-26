@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 多账号任务调度
 
@@ -10,7 +9,7 @@ import logging
 import os
 import random
 import time
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable
 
 logger = logging.getLogger(__name__)
 
@@ -38,11 +37,11 @@ def apply_startup_jitter(env_var: str, default_max: int = 600) -> float:
 
 
 def run_accounts(
-    accounts: List[Dict[str, Any]],
-    handler: Callable[[int, Dict[str, Any]], Dict[str, Any]],
+    accounts: list[dict[str, Any]],
+    handler: Callable[[int, dict[str, Any]], dict[str, Any]],
     *,
     interval_range: tuple = (5, 10),
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """
     顺序执行多账号任务,自动添加账号间随机延迟并隔离异常
 
@@ -55,7 +54,7 @@ def run_accounts(
     Returns:
         所有账号的处理结果列表
     """
-    results: List[Dict[str, Any]] = []
+    results: list[dict[str, Any]] = []
     total = len(accounts)
 
     for idx, account in enumerate(accounts):

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 WPS 福利中心入口发现
 
@@ -7,7 +6,7 @@ WPS 福利中心入口发现
 独立成模块以降低 daily_benefits.py 体积，由 DailyBenefitsAPI.get_benefit_portal 委托调用。
 """
 
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Optional
 from urllib.parse import parse_qs, urlparse
 
 # 入口判定依据活动链接 query 中的 position 参数，福利中心固定为 pc_nvc_activity_fuli。
@@ -17,10 +16,10 @@ TARGET_TITLES = {"福利中心", "天天领福利"}
 
 
 def discover_benefit_portal(
-    market_activity_getter: Callable[[Dict[str, Any]], Dict[str, Any]],
-    channels: List[Dict[str, Any]],
+    market_activity_getter: Callable[[dict[str, Any]], dict[str, Any]],
+    channels: list[dict[str, Any]],
     logger,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     跨多个营销渠道发现并选中「天天领福利」活动入口
 
@@ -32,8 +31,8 @@ def discover_benefit_portal(
     Returns:
         成功时为解析后的入口信息，失败时为 {"success": False, "error": ...}
     """
-    raw_candidates: List[Dict[str, str]] = []
-    channel_errors: List[str] = []
+    raw_candidates: list[dict[str, str]] = []
+    channel_errors: list[str] = []
     auth_expired = False
 
     for channel_payload in channels:
@@ -81,9 +80,9 @@ def discover_benefit_portal(
     return selected
 
 
-def _parse_portal_candidates(raw_candidates: List[Dict[str, str]]) -> List[Dict[str, Any]]:
+def _parse_portal_candidates(raw_candidates: list[dict[str, str]]) -> list[dict[str, Any]]:
     """解析候选链接并按 activity/page 去重，附带 position/title。"""
-    parsed: List[Dict[str, Any]] = []
+    parsed: list[dict[str, Any]] = []
     seen: set = set()
     for candidate in raw_candidates:
         portal_info = _parse_portal_link(candidate["link"])
@@ -102,7 +101,7 @@ def _parse_portal_candidates(raw_candidates: List[Dict[str, str]]) -> List[Dict[
     return parsed
 
 
-def _select_benefit_portal(parsed_candidates: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+def _select_benefit_portal(parsed_candidates: list[dict[str, Any]]) -> Optional[dict[str, Any]]:
     """按 position 精确命中 > position 含 fuli > 标题命中 的顺序选中福利入口。"""
     for candidate in parsed_candidates:
         if candidate.get("position") in TARGET_POSITIONS:
@@ -119,7 +118,7 @@ def _select_benefit_portal(parsed_candidates: List[Dict[str, Any]]) -> Optional[
     return None
 
 
-def _collect_portal_candidates(node: Any, candidates: List[Dict[str, str]]) -> None:
+def _collect_portal_candidates(node: Any, candidates: list[dict[str, str]]) -> None:
     """递归收集包含 portal 链接的活动入口（不再要求节点带 title）"""
     if isinstance(node, dict):
         link = node.get("link")
@@ -139,7 +138,7 @@ def _collect_portal_candidates(node: Any, candidates: List[Dict[str, str]]) -> N
             _collect_portal_candidates(item, candidates)
 
 
-def _parse_portal_link(link: str) -> Dict[str, Any]:
+def _parse_portal_link(link: str) -> dict[str, Any]:
     """解析活动 portal 链接"""
     try:
         parsed = urlparse(link)

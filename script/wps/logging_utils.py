@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """WPS 脚本日志辅助工具。
 
 logger 的创建统一使用 _shared.setup_logger,
@@ -7,7 +6,8 @@ logger 的创建统一使用 _shared.setup_logger,
 """
 
 import logging
-from typing import Any, Mapping, MutableMapping, Optional
+from collections.abc import Mapping, MutableMapping
+from typing import Any, Optional
 
 
 class ContextAdapter(logging.LoggerAdapter):

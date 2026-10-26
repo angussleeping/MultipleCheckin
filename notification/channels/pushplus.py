@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """PushPlus 推送渠道"""
 
 import requests

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 new Env('AgentRouter签到');
 cron: 20 9 * * *
@@ -35,7 +34,7 @@ Date: 2026-09-10
 
 import sys
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 # 路径布局:项目根目录(notification)、script/ 目录(_shared)、脚本所在目录(api 等 sibling 模块)
 script_dir = Path(__file__).resolve().parent
@@ -44,8 +43,6 @@ sys.path.insert(0, str(project_root))
 sys.path.insert(0, str(script_dir.parent))
 sys.path.insert(0, str(script_dir))
 
-from api import DEFAULT_BASE_URL, AgentRouterAPI
-from notification import NotificationSound
 from _shared import (
     apply_startup_jitter,
     load_platform_accounts,
@@ -53,6 +50,9 @@ from _shared import (
     send_summary_notification,
     setup_logger,
 )
+from api import DEFAULT_BASE_URL, AgentRouterAPI
+
+from notification import NotificationSound
 
 logger = setup_logger('agentrouter')
 
@@ -67,11 +67,11 @@ class AgentRouterTasks:
             self.config_path = Path(config_path)
 
         self.logger = logger
-        self.accounts: List[Dict[str, Any]] = load_platform_accounts(
+        self.accounts: list[dict[str, Any]] = load_platform_accounts(
             'agentrouter', self.config_path, required_fields=['github_session'])
-        self.account_results: List[Dict[str, Any]] = []
+        self.account_results: list[dict[str, Any]] = []
 
-    def _build_api(self, account_info: Dict[str, Any]) -> AgentRouterAPI:
+    def _build_api(self, account_info: dict[str, Any]) -> AgentRouterAPI:
         return AgentRouterAPI(
             base_url=account_info.get('base_url') or DEFAULT_BASE_URL,
             github_session=account_info.get('github_session') or '',
@@ -80,7 +80,7 @@ class AgentRouterTasks:
             verify=account_info.get('verify'),
         )
 
-    def _describe_user(self, api: AgentRouterAPI, session) -> Dict[str, Any]:
+    def _describe_user(self, api: AgentRouterAPI, session) -> dict[str, Any]:
         """查询登录后的账号信息，返回额度摘要"""
         info = api.get_user_self(session)
         if not info.get('success'):
@@ -97,7 +97,7 @@ class AgentRouterTasks:
         }
         return summary
 
-    def process_account(self, account_index: int, account_info: Dict[str, Any]) -> Dict[str, Any]:
+    def process_account(self, account_index: int, account_info: dict[str, Any]) -> dict[str, Any]:
         """
         处理单个账号的签到（即重新登录）
 
@@ -111,7 +111,7 @@ class AgentRouterTasks:
         account_name = account_info.get('account_name') or f'账号{account_index + 1}'
         self.logger.info(f"\n{'=' * 60}\n开始处理账号: {account_name}\n{'=' * 60}")
 
-        result: Dict[str, Any] = {
+        result: dict[str, Any] = {
             'account_name': account_name,
             'success': False,
             'message': '',

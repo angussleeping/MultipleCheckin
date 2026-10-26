@@ -11,13 +11,13 @@ cron: 24 6 * * *
 """
 
 import json
-import time
+import os
 import random
 import sys
-import os
-from pathlib import Path
-from typing import Dict, Any
+import time
 from datetime import datetime
+from pathlib import Path
+from typing import Any
 
 # 获取当前文件的绝对路径
 current_file = os.path.abspath(__file__)
@@ -36,19 +36,18 @@ if smzdm_dir not in sys.path:
 if script_dir not in sys.path:
     sys.path.insert(0, script_dir)
 
+from _shared import (
+    apply_startup_jitter,
+    build_summary,
+    load_platform_accounts,
+    run_accounts,
+    send_summary_notification,
+    setup_logger,
+)
 from api.api import SmzdmAPI
 from service import SmzdmService
 
-from notification import send_notification, NotificationSound
-
-from _shared import (
-    setup_logger,
-    load_platform_accounts,
-    run_accounts,
-    apply_startup_jitter,
-    build_summary,
-    send_summary_notification,
-)
+from notification import NotificationSound, send_notification
 
 # 初始化统一日志（自动脱敏敏感字段，并轮转写入本地日志文件）
 logger = setup_logger('smzdm', log_file=Path(__file__).resolve().parent / 'smzdm_task.log')
@@ -95,7 +94,7 @@ class SmzdmTaskManager:
             logger.error(f"❌ 加载配置文件失败: {str(e)}")
             raise
 
-    def print_task_info(self, task: Dict[str, Any]):
+    def print_task_info(self, task: dict[str, Any]):
         """
         打印任务信息
 
@@ -106,7 +105,7 @@ class SmzdmTaskManager:
         task_status = task.get('task_status', 0)
         task_finished = task.get('task_finished_num', 0)
         task_total = task.get('task_even_num', 0)
-        task_desc = task.get('task_description', '')
+        task.get('task_description', '')
 
         # 任务状态映射
         status_map = {
@@ -127,7 +126,7 @@ class SmzdmTaskManager:
 
         logger.info(f"    📋 {task_name}: {status_text} ({task_finished}/{task_total}) 🎁 {reward_text}")
 
-    def process_zhongce_tasks(self, api: SmzdmAPI, account_name: str) -> Dict[str, int]:
+    def process_zhongce_tasks(self, api: SmzdmAPI, account_name: str) -> dict[str, int]:
         """
         处理众测任务模块
 
@@ -139,7 +138,7 @@ class SmzdmTaskManager:
             执行统计字典 {success: 成功数, fail: 失败数, skip: 跳过数}
         """
         logger.info(f"\n{'='*60}")
-        logger.info(f"🎯 开始处理众测任务模块")
+        logger.info("🎯 开始处理众测任务模块")
         logger.info(f"{'='*60}")
 
         try:
@@ -154,13 +153,13 @@ class SmzdmTaskManager:
             # 获取活动ID
             activity_id = api.get_activity_id()
             if not activity_id:
-                logger.error(f"❌ 获取众测活动ID失败")
+                logger.error("❌ 获取众测活动ID失败")
                 return {'success': 0, 'fail': 0, 'skip': 0}
 
             # 获取任务列表
             tasks = api.get_task_list(activity_id)
             if not tasks:
-                logger.error(f"❌ 获取众测任务列表失败")
+                logger.error("❌ 获取众测任务列表失败")
                 return {'success': 0, 'fail': 0, 'skip': 0}
 
             # 打印任务信息
@@ -169,7 +168,7 @@ class SmzdmTaskManager:
                 self.print_task_info(task)
 
             # 执行任务
-            logger.info(f"🔧 开始执行众测任务...")
+            logger.info("🔧 开始执行众测任务...")
             success_count = 0
             fail_count = 0
             skip_count = 0
@@ -200,13 +199,13 @@ class SmzdmTaskManager:
                     fail_count += 1
 
             # 输出执行结果统计
-            logger.info(f"📊 众测任务执行统计:")
+            logger.info("📊 众测任务执行统计:")
             logger.info(f"    ✅ 成功: {success_count} 个")
             logger.info(f"    ⚠️  失败: {fail_count} 个")
             logger.info(f"    ⏭️  跳过: {skip_count} 个")
 
             # 领取任务奖励
-            logger.info(f"💰 检查并领取众测任务奖励...")
+            logger.info("💰 检查并领取众测任务奖励...")
             self.claim_task_rewards(api, activity_id)
 
             return {'success': success_count, 'fail': fail_count, 'skip': skip_count}
@@ -215,7 +214,7 @@ class SmzdmTaskManager:
             logger.error(f"❌ 处理众测任务时发生错误: {str(e)}", exc_info=True)
             return {'success': 0, 'fail': 0, 'skip': 0}
 
-    def process_interactive_tasks(self, api: SmzdmAPI, account_name: str) -> Dict[str, int]:
+    def process_interactive_tasks(self, api: SmzdmAPI, account_name: str) -> dict[str, int]:
         """
         处理互动任务模块
 
@@ -227,7 +226,7 @@ class SmzdmTaskManager:
             执行统计字典 {success: 成功数, fail: 失败数, skip: 跳过数}
         """
         logger.info(f"\n{'='*60}")
-        logger.info(f"🎯 开始处理互动任务模块")
+        logger.info("🎯 开始处理互动任务模块")
         logger.info(f"{'='*60}")
 
         try:
@@ -252,9 +251,9 @@ class SmzdmTaskManager:
                 if (activity_reward_status == '1' or activity_reward_status == 1) and activity_id:
                     logger.info("🎁 检测到活动阶段性奖励可领取...")
                     if api.receive_activity_reward(activity_id):
-                        logger.info(f"    ✅ 活动阶段性奖励领取成功")
+                        logger.info("    ✅ 活动阶段性奖励领取成功")
                     else:
-                        logger.info(f"    ❌ 活动阶段性奖励领取失败")
+                        logger.info("    ❌ 活动阶段性奖励领取失败")
 
             # 解析任务列表 - 使用service层
             tasks = service.parse_interactive_tasks(task_data)
@@ -266,7 +265,7 @@ class SmzdmTaskManager:
             logger.info(f"📊 互动任务列表 (共 {len(tasks)} 个):")
 
             # 执行任务
-            logger.info(f"🔧 开始执行互动任务...")
+            logger.info("🔧 开始执行互动任务...")
             success_count = 0
             fail_count = 0
             skip_count = 0
@@ -359,13 +358,13 @@ class SmzdmTaskManager:
                     fail_count += 1
 
             # 输出执行结果统计
-            logger.info(f"📊 互动任务执行统计:")
+            logger.info("📊 互动任务执行统计:")
             logger.info(f"    ✅ 成功: {success_count} 个")
             logger.info(f"    ⚠️  失败: {fail_count} 个")
             logger.info(f"    ⏭️  跳过: {skip_count} 个")
 
             # 重新获取任务列表并领取奖励
-            logger.info(f"💰 重新获取互动任务状态并领取奖励...")
+            logger.info("💰 重新获取互动任务状态并领取奖励...")
             self.claim_interactive_task_rewards(api, service)
 
             return {'success': success_count, 'fail': fail_count, 'skip': skip_count}
@@ -521,7 +520,7 @@ class SmzdmTaskManager:
         except Exception as e:
             logger.exception(f"❌ 发送任务汇总推送失败: {e}")
 
-    def process_account(self, account: Dict[str, str]) -> Dict[str, Any]:
+    def process_account(self, account: dict[str, str]) -> dict[str, Any]:
         """
         处理单个账号的任务
 
@@ -567,7 +566,7 @@ class SmzdmTaskManager:
 
             # 0. 每日签到
             logger.info(f"\n{'='*60}")
-            logger.info(f"📅 开始执行每日签到")
+            logger.info("📅 开始执行每日签到")
             logger.info(f"{'='*60}")
 
             checkin_data = api.daily_checkin()
@@ -634,7 +633,7 @@ class SmzdmTaskManager:
         finally:
             api.close()
 
-    def _run_one_account(self, idx: int, account: Dict[str, str]) -> Dict[str, Any]:
+    def _run_one_account(self, idx: int, account: dict[str, str]) -> dict[str, Any]:
         """run_accounts 的单账号 handler，隔离未捕获异常"""
         logger.info(f"\n{'#'*60}")
         logger.info(f"# 处理第 {idx + 1}/{len(self.accounts)} 个账号")

@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """_shared.http_client 单元测试"""
 
 import sys
 from pathlib import Path
 from unittest.mock import patch
 
-import pytest
 import requests
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'script'))

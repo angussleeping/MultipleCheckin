@@ -6,7 +6,7 @@
 
 import logging
 import time
-from typing import Dict, Any, List, Optional
+from typing import Any
 
 logger = logging.getLogger('smzdm')
 
@@ -25,7 +25,7 @@ class SmzdmService:
 
     # ==================== 数据解析相关 ====================
 
-    def parse_interactive_tasks(self, task_data: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def parse_interactive_tasks(self, task_data: dict[str, Any]) -> list[dict[str, Any]]:
         """
         解析互动任务数据，提取所有任务列表
 
@@ -58,7 +58,7 @@ class SmzdmService:
             logger.warning("互动任务数据中没有找到任务列表")
             return []
 
-    def print_energy_info(self, user_data: Dict[str, Any]):
+    def print_energy_info(self, user_data: dict[str, Any]):
         """
         打印用户能量值信息
 
@@ -70,7 +70,7 @@ class SmzdmService:
         energy_expired_time = my_energy.get('energy_expired_time', '未知')
         win_coupon_total = my_energy.get('win_conpou_total', 0)
 
-        logger.info(f"\n  💎 能量值信息:")
+        logger.info("\n  💎 能量值信息:")
         logger.info(f"    当前能量值: {my_energy_total}")
         logger.info(f"    过期时间: {energy_expired_time}")
         logger.info(f"    已兑换必中券: {win_coupon_total} 张")
@@ -80,7 +80,7 @@ class SmzdmService:
         win_coupon_list = exchange_info.get('win_coupon_list', [])
 
         if win_coupon_list:
-            logger.info(f"\n  🎫 可兑换必中券列表:")
+            logger.info("\n  🎫 可兑换必中券列表:")
             for coupon in win_coupon_list:
                 coupon_name = coupon.get('article_title', '未知')
                 coupon_energy = coupon.get('article_energy_total', 0)
@@ -92,7 +92,7 @@ class SmzdmService:
 
     # ==================== 众测任务业务逻辑 ====================
 
-    def execute_task(self, task: Dict[str, Any]) -> bool:
+    def execute_task(self, task: dict[str, Any]) -> bool:
         """
         根据任务类型执行对应的任务（众测任务）
 
@@ -160,7 +160,7 @@ class SmzdmService:
             logger.warning(f"未知任务类型: {task_event_type}")
             return False
 
-    def execute_share_task(self, task: Dict[str, Any]) -> bool:
+    def execute_share_task(self, task: dict[str, Any]) -> bool:
         """
         执行分享众测招募任务
 
@@ -222,7 +222,7 @@ class SmzdmService:
                 success_count += 1
                 logger.info(f"    ✅ 分享成功 (进度: {success_count}/{remaining_count})")
             else:
-                logger.info(f"    ❌ 分享失败")
+                logger.info("    ❌ 分享失败")
 
             # 分享间隔
             if success_count < remaining_count:
@@ -231,7 +231,7 @@ class SmzdmService:
         logger.info(f"分享任务完成，成功分享 {success_count} 次")
         return success_count > 0
 
-    def execute_apply_zhongce_task(self, task: Dict[str, Any]) -> bool:
+    def execute_apply_zhongce_task(self, task: dict[str, Any]) -> bool:
         """
         执行申请众测任务
 
@@ -301,7 +301,7 @@ class SmzdmService:
                 success_count += 1
                 logger.info(f"    ✅ 申请成功 (进度: {success_count}/{remaining_count})")
             else:
-                logger.info(f"    ⏭️  跳过该商品")
+                logger.info("    ⏭️  跳过该商品")
 
             # 申请间隔
             if success_count < remaining_count:
@@ -312,7 +312,7 @@ class SmzdmService:
 
     # ==================== 互动任务业务逻辑 ====================
 
-    def execute_interactive_task(self, task: Dict[str, Any]) -> bool:
+    def execute_interactive_task(self, task: dict[str, Any]) -> bool:
         """
         执行互动任务
 
@@ -384,7 +384,7 @@ class SmzdmService:
 
     # ==================== 关注用户业务逻辑 ====================
 
-    def execute_follow_task(self, max_follow_count: int = 5) -> Dict[str, int]:
+    def execute_follow_task(self, max_follow_count: int = 5) -> dict[str, int]:
         """
         执行关注任务（关注用户后立即取消关注）
 
@@ -431,20 +431,20 @@ class SmzdmService:
 
                 # 执行关注
                 if self.api.follow_user(article_title, user_id):
-                    logger.info(f"    ✅ 关注成功")
+                    logger.info("    ✅ 关注成功")
 
                     # 等待一下再取消关注
                     time.sleep(2)
 
                     # 取消关注
                     if self.api.unfollow_user(article_title, user_id):
-                        logger.info(f"    ✅ 取消关注成功")
+                        logger.info("    ✅ 取消关注成功")
                         success_count += 1
                     else:
-                        logger.info(f"    ❌ 取消关注失败")
+                        logger.info("    ❌ 取消关注失败")
                         fail_count += 1
                 else:
-                    logger.info(f"    ❌ 关注失败")
+                    logger.info("    ❌ 关注失败")
                     fail_count += 1
 
                 processed_count += 1
@@ -462,7 +462,7 @@ class SmzdmService:
 
     # ==================== 每日签到业务逻辑 ====================
 
-    def print_checkin_info(self, checkin_data: Dict[str, Any]):
+    def print_checkin_info(self, checkin_data: dict[str, Any]):
         """
         打印签到信息
 
@@ -470,7 +470,7 @@ class SmzdmService:
             checkin_data: 签到返回的数据字典
         """
         # 提取签到信息
-        cpadd = checkin_data.get('cpadd', 0)  # 本次新增积分
+        checkin_data.get('cpadd', 0)  # 本次新增积分
         daily_num = checkin_data.get('daily_num', 0)  # 连续签到天数
         cpoints = checkin_data.get('cpoints', 0)  # 当前积分
         cexperience = checkin_data.get('cexperience', 0)  # 当前经验值
@@ -480,16 +480,16 @@ class SmzdmService:
         lottery_type = checkin_data.get('lottery_type', '')  # 抽奖类型
         pre_re_silver = int(checkin_data.get('pre_re_silver', 0))  # 上次获得的银币
 
-        logger.info(f"\n  📅 签到成功!")
-        logger.info(f"  " + "="*50)
+        logger.info("\n  📅 签到成功!")
+        logger.info("  " + "="*50)
 
         # 签到基本信息
-        logger.info(f"  📊 签到统计:")
+        logger.info("  📊 签到统计:")
         logger.info(f"    • 连续签到: {daily_num} 天")
 
 
         # 账户余额信息
-        logger.info(f"\n  💰 账户余额:")
+        logger.info("\n  💰 账户余额:")
         logger.info(f"    • 当前积分: {cpoints}")
         logger.info(f"    • 当前金币: {cgold}")
         logger.info(f"    • 当前经验: {cexperience}")
@@ -497,7 +497,7 @@ class SmzdmService:
 
         # 抽奖信息
         if lottery_type:
-            logger.info(f"\n  🎰 抽奖信息:")
+            logger.info("\n  🎰 抽奖信息:")
             logger.info(f"    • 抽奖类型: {lottery_type}")
             if pre_re_silver > 0:
                 logger.info(f"    • 上次银币奖励: {pre_re_silver}")
@@ -506,4 +506,4 @@ class SmzdmService:
         if slogan:
             logger.info(f"\n  💭 个性签名: {slogan}")
 
-        logger.info(f"  " + "="*50)
+        logger.info("  " + "="*50)

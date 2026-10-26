@@ -15,7 +15,7 @@
 import logging
 import sys
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 from urllib.parse import unquote
 
 import requests
@@ -29,16 +29,16 @@ for _p in (str(_script_dir), str(_api_dir)):
 
 try:
     from .activity import ActivityMixin
-    from .tasks import TasksMixin
+    from .baoliao import BaoliaoMixin
     from .checkin import CheckinMixin
     from .follow import FollowMixin
-    from .baoliao import BaoliaoMixin
+    from .tasks import TasksMixin
 except ImportError:  # 直接运行本文件时无包上下文,回退为同级导入
     from activity import ActivityMixin
-    from tasks import TasksMixin
+    from baoliao import BaoliaoMixin
     from checkin import CheckinMixin
     from follow import FollowMixin
-    from baoliao import BaoliaoMixin
+    from tasks import TasksMixin
 from _shared.http_client import create_session, request_with_retry
 
 # 获取logger实例（由main.py统一配置）
@@ -100,7 +100,7 @@ class SmzdmAPI(ActivityMixin, TasksMixin, CheckinMixin, FollowMixin, BaoliaoMixi
         method: str,
         url: str,
         **kwargs
-    ) -> Optional[Dict[str, Any]]:
+    ) -> Optional[dict[str, Any]]:
         """
         发送HTTP请求的通用方法
 

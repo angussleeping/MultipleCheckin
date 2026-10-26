@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 new Env('TraeCN签到');
 cron: 30 4 * * *
@@ -43,7 +42,7 @@ import random
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Optional
 
 # 路径布局:项目根目录(notification)、script/ 目录(_shared)、脚本所在目录(api 等 sibling 模块)
 script_dir = Path(__file__).resolve().parent
@@ -52,12 +51,6 @@ sys.path.insert(0, str(project_root))
 sys.path.insert(0, str(script_dir.parent))
 sys.path.insert(0, str(script_dir))
 
-from api import TraeAPI, TraeWebAPI, login_refresh
-from import_accounts import (
-    get_or_create_device_id,
-    scan_client_device_pairs,
-)
-from notification import NotificationSound
 from _shared import (
     apply_startup_jitter,
     build_summary,
@@ -66,6 +59,13 @@ from _shared import (
     send_summary_notification,
     setup_logger,
 )
+from api import TraeAPI, TraeWebAPI, login_refresh
+from import_accounts import (
+    get_or_create_device_id,
+    scan_client_device_pairs,
+)
+
+from notification import NotificationSound
 
 logger = setup_logger('trae')
 
@@ -100,17 +100,17 @@ class TraeTasks:
         self.logger = logger
         # 只保留 CN 账号（签到积分接口仅存在于 Trae CN）
         all_accounts = load_platform_accounts('trae', self.config_path)
-        self.accounts: List[Dict[str, Any]] = [
+        self.accounts: list[dict[str, Any]] = [
             a for a in all_accounts if a.get('region', 'CN') == 'CN'
         ]
         if self.accounts:
             self.logger.info(f"成功加载 {len(self.accounts)} 个 CN 账号配置")
-        self.account_results: List[Dict[str, Any]] = []
+        self.account_results: list[dict[str, Any]] = []
         # 已处理账号的 UserID → 账号名，用于识别指向同一账号的重复配置条目
-        self.seen_user_ids: Dict[str, str] = {}
+        self.seen_user_ids: dict[str, str] = {}
 
-    def resolve_device_for(self, account: Dict[str, Any], pair_map: Dict[str, str],
-                           shared_device: Optional[str]) -> Tuple[Optional[str], Optional[str]]:
+    def resolve_device_for(self, account: dict[str, Any], pair_map: dict[str, str],
+                           shared_device: Optional[str]) -> tuple[Optional[str], Optional[str]]:
         """
         解析账号的签到设备 ID（签到领取必须携带账号自己注册的设备）
 
@@ -143,8 +143,8 @@ class TraeTasks:
             "（该设备每日只能成功领取一次）。"
         )
 
-    def _build_api(self, account_info: Dict[str, Any], prefer_desktop: bool = False
-                   ) -> Tuple[Optional[Any], str, Optional[str], Optional[str]]:
+    def _build_api(self, account_info: dict[str, Any], prefer_desktop: bool = False
+                   ) -> tuple[Optional[Any], str, Optional[str], Optional[str]]:
         """
         按账号凭证构造 API 实例
 
@@ -198,7 +198,7 @@ class TraeTasks:
         return TraeAPI(access_token=access_token, device_id=device_id or ''), mode, device_id, missing_reason
 
     def _display_name(self, name: str, api: Optional[Any],
-                      account_info: Dict[str, Any]) -> str:
+                      account_info: dict[str, Any]) -> str:
         """
         组装账号显示名：配置名 + UserID 尾号后缀，便于在通知里区分同名/笼统命名的账号
 
@@ -214,7 +214,7 @@ class TraeTasks:
             return name
         return f'{name}(#{user_id[-6:]})'
 
-    def process_account(self, account_index: int, account_info: Dict[str, Any]) -> Dict[str, Any]:
+    def process_account(self, account_index: int, account_info: dict[str, Any]) -> dict[str, Any]:
         """
         处理单个账号的签到任务
 
@@ -424,7 +424,7 @@ class TraeTasks:
         if not dry_run:
             self._send_notification()
 
-    def _stats(self) -> Dict[str, int]:
+    def _stats(self) -> dict[str, int]:
         """汇总各分类计数（重复配置条目单独统计，不计入签到成功/失败）"""
         total = len(self.account_results)
         duplicate = sum(1 for r in self.account_results if r.get('duplicate'))
@@ -482,7 +482,7 @@ class TraeTasks:
             return
 
         stats = self._stats()
-        extra_stats: Dict[str, Any] = {}
+        extra_stats: dict[str, Any] = {}
         if stats['duplicate']:
             extra_stats['⚠️ 重复账号'] = stats['duplicate']
         if stats['token_failed']:

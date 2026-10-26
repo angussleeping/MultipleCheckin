@@ -1,22 +1,21 @@
-# -*- coding: utf-8 -*-
 """通知配置加载：文件 > 环境变量 > 默认值"""
 
-import os
 import json
 import logging
-from typing import Dict, Any
+import os
+from typing import Any
 
 logger = logging.getLogger("NotificationManager")
 
 
-def load_config_from_file() -> Dict:
+def load_config_from_file() -> dict:
     """从JSON文件中加载配置"""
     config_path = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
         'config', 'notification.json'
     )
     if os.path.exists(config_path):
-        with open(config_path, 'r', encoding='utf-8') as f:
+        with open(config_path, encoding='utf-8') as f:
             try:
                 return json.load(f)
             except json.JSONDecodeError:
@@ -25,7 +24,7 @@ def load_config_from_file() -> Dict:
     return {}
 
 
-def get_config_value(file_config: Dict, service: str, key: str, env_var: str, default: Any = None) -> Any:
+def get_config_value(file_config: dict, service: str, key: str, env_var: str, default: Any = None) -> Any:
     """
     获取配置值，优先级: 文件 > 环境变量 > 默认值
     """

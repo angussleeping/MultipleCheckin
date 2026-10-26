@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Cool Push 推送渠道"""
 
 import requests
@@ -30,7 +29,7 @@ def send(config, title, content, timeout, logger, **kwargs) -> bool:
 
     try:
         logger.info("正在发送CoolPush推送")
-        base_url = f"https://push.xuthus.cc"
+        base_url = "https://push.xuthus.cc"
         if config.get('qq'):
             requests.post(f"{base_url}/send/{skey}", params=params, timeout=timeout)
         if config.get('wx'):

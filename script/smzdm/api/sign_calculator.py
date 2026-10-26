@@ -1,13 +1,13 @@
 import hashlib
 import re
-from typing import Dict, Any, Union
-from urllib.parse import urlparse, parse_qs
+from typing import Any, Union
+from urllib.parse import parse_qs, urlparse
 
 # 公共变量：用于 sign 计算的固定 key
 SECRET_KEY = "zok5JtAq3$QixaA%mncn*jGWlEpSL3E1"
 
 
-def calculate_sign(data: Dict[str, Any]) -> str:
+def calculate_sign(data: dict[str, Any]) -> str:
     """
     计算 sign 签名（适用于 POST 请求的 data 参数）
 
@@ -43,7 +43,7 @@ def calculate_sign_from_url(url: str) -> str:
     return _generate_sign_from_dict(params_dict)
 
 
-def calculate_sign_from_params(params: Union[Dict[str, Any], str]) -> str:
+def calculate_sign_from_params(params: Union[dict[str, Any], str]) -> str:
     """
     通用的 sign 计算函数，支持字典参数或 URL 字符串
 
@@ -71,7 +71,7 @@ def calculate_sign_from_params(params: Union[Dict[str, Any], str]) -> str:
         raise ValueError("params 必须是字典或字符串类型")
 
 
-def _generate_sign_from_dict(data: Dict[str, Any]) -> str:
+def _generate_sign_from_dict(data: dict[str, Any]) -> str:
     """
     从字典参数生成 sign 签名的内部函数
 

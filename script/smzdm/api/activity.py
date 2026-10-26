@@ -1,11 +1,19 @@
-# -*- coding: utf-8 -*-
 """什么值得买 - 众测任务相关API(自 api.py 拆分, 经 Mixin 组合回 SmzdmAPI)"""
 
 import logging
+import sys
 import time
-from typing import Any, Dict, List, Optional
+from pathlib import Path
+from typing import Any, Optional
 
 import requests
+
+# 确保 _shared 可导入(Mixin 独立运行时需要)
+_script_dir = Path(__file__).resolve().parent.parent.parent
+if str(_script_dir) not in sys.path:
+    sys.path.insert(0, str(_script_dir))
+
+from _shared.http_client import request_with_retry
 
 try:
     from .sign_calculator import calculate_sign
@@ -43,7 +51,7 @@ class ActivityMixin:
         logger.error("❌ 获取活动ID失败")
         return None
 
-    def get_activity_info(self, activity_id: str) -> Optional[Dict[str, Any]]:
+    def get_activity_info(self, activity_id: str) -> Optional[dict[str, Any]]:
         """
         获取活动信息和任务列表
 
@@ -69,7 +77,7 @@ class ActivityMixin:
 
 
 
-    def get_baoliao_task_list(self) -> Optional[Dict[str, Any]]:
+    def get_baoliao_task_list(self) -> Optional[dict[str, Any]]:
         """
         获取爆料任务列表
 
@@ -110,7 +118,7 @@ class ActivityMixin:
             'Cookie': self.cookie
         }
 
-        logger.info(f"📌 正在获取爆料任务列表")
+        logger.info("📌 正在获取爆料任务列表")
 
         try:
             response = request_with_retry(self.session, 'POST', url, data=params, headers=headers)
@@ -140,7 +148,7 @@ class ActivityMixin:
         except ValueError as e:
             logger.error(f"❌ JSON解析失败: {str(e)}")
             return None
-    def get_task_list(self, activity_id: str) -> Optional[List[Dict[str, Any]]]:
+    def get_task_list(self, activity_id: str) -> Optional[list[dict[str, Any]]]:
         """
         获取任务列表
 
@@ -168,7 +176,7 @@ class ActivityMixin:
         logger.info(f"✅ 获取到 {len(task_lists)} 个任务")
         return task_lists
 
-    def get_user_energy_info(self) -> Optional[Dict[str, Any]]:
+    def get_user_energy_info(self) -> Optional[dict[str, Any]]:
         """
         获取用户众测能量值信息
 

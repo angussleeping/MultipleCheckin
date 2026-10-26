@@ -1,19 +1,18 @@
-# -*- coding: utf-8 -*-
 """什么值得买 - 爆料相关API(自 api.py 拆分, 经 Mixin 组合回 SmzdmAPI)"""
 
 import base64
 import logging
 import time
 from io import BytesIO
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import requests
 from PIL import Image
 
 try:
-    from .sign_calculator import calculate_sign_from_params, calculate_sign
+    from .sign_calculator import calculate_sign, calculate_sign_from_params
 except ImportError:  # 无包上下文(直接运行)时回退为同级导入
-    from sign_calculator import calculate_sign_from_params, calculate_sign
+    from sign_calculator import calculate_sign, calculate_sign_from_params
 from _shared.http_client import request_with_retry
 
 logger = logging.getLogger('smzdm')
@@ -23,7 +22,7 @@ class BaoliaoMixin:
     """爆料相关API: 查重/预检/提交/图片上传/阶段性奖励"""
     # ==================== 爆料相关API ====================
 
-    def check_repeat_baoliao(self, url: str) -> Optional[Dict[str, Any]]:
+    def check_repeat_baoliao(self, url: str) -> Optional[dict[str, Any]]:
         """
         检查爆料链接是否重复
 
@@ -101,7 +100,7 @@ class BaoliaoMixin:
             logger.error(f"❌ 检查爆料重复未知错误: {str(e)}")
             return None
 
-    def submit_pre_check_baoliao(self, params: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    def submit_pre_check_baoliao(self, params: dict[str, Any]) -> Optional[dict[str, Any]]:
         """
         提交爆料前置检查
 
@@ -110,7 +109,6 @@ class BaoliaoMixin:
         Returns:
             检查结果字典，失败返回None
         """
-        import json  # 在函数内部导入，避免循环导入
 
         api_url = "https://app-api.smzdm.com/baoliao_v2/submit_pre_check"
 
@@ -171,7 +169,7 @@ class BaoliaoMixin:
             return None
 
 
-    def submit_baoliao_article(self, params: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    def submit_baoliao_article(self, params: dict[str, Any]) -> Optional[dict[str, Any]]:
         """
         提交爆料
 
@@ -180,7 +178,6 @@ class BaoliaoMixin:
         Returns:
             检查结果字典，失败返回None
         """
-        import json  # 在函数内部导入，避免循环导入
 
         api_url = "https://app-api.smzdm.com/v2/baoliao/submit"
 
@@ -240,7 +237,7 @@ class BaoliaoMixin:
 
 
 
-    def upload_baoliao_image(self, image_url: str, pic_index: int = 0) -> Optional[Dict[str, Any]]:
+    def upload_baoliao_image(self, image_url: str, pic_index: int = 0) -> Optional[dict[str, Any]]:
         """
         上传图片到什么值得买服务器
 
@@ -309,7 +306,7 @@ class BaoliaoMixin:
             logger.error(f"❌ 处理图片失败: {e}")
             return None, ''
 
-    def _upload_to_smzdm(self, img_data: bytes, img_format: str, pic_index: int) -> Optional[Dict[str, Any]]:
+    def _upload_to_smzdm(self, img_data: bytes, img_format: str, pic_index: int) -> Optional[dict[str, Any]]:
         """
         上传图片数据到什么值得买服务器
         """
@@ -480,7 +477,7 @@ class BaoliaoMixin:
             'Accept-Language': 'zh-Hans-CN;q=1'
         })
 
-        logger.info(f"📌 正在获取用户爆料文章列表...")
+        logger.info("📌 正在获取用户爆料文章列表...")
 
         try:
             response = request_with_retry(self.session, 'POST', url, data=params, headers=headers)
@@ -488,7 +485,7 @@ class BaoliaoMixin:
             data = response.json()
 
             if data.get('error_code') == '0' or data.get('error_code') == 0:
-                logger.info(f"✅ 成功获取用户爆料文章列表")
+                logger.info("✅ 成功获取用户爆料文章列表")
                 return data.get('data', {})
             else:
                 logger.error(f"❌ 获取用户爆料文章列表失败: {data.get('error_msg', '未知错误')}")
@@ -532,7 +529,7 @@ class BaoliaoMixin:
             'Accept-Language': 'zh-Hans-CN;q=1'
         })
 
-        logger.info(f"📌 正在获取用户robot生成token...")
+        logger.info("📌 正在获取用户robot生成token...")
 
         try:
             response = request_with_retry(self.session, 'POST', url, data=params, headers=headers)
@@ -540,7 +537,7 @@ class BaoliaoMixin:
             data = response.json()
             logger.debug(f"响应数据: {data}")
             if data.get('error_code') == '0' or data.get('error_code') == 0:
-                logger.info(f"✅ 成功获取用户robot生成token")
+                logger.info("✅ 成功获取用户robot生成token")
                 return data.get('data', {})
             else:
                 logger.error(f"❌ 获取用户robot生成token失败: {data.get('error_msg', '未知错误')}")

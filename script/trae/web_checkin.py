@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Trae CN 网页会话签到验证工具（方案 C：验证 star620 的云端思路）
 
@@ -58,11 +57,11 @@ def get_token(session: str) -> str:
     try:
         data = json.loads(text)
     except json.JSONDecodeError:
-        print("GetUserToken 返回非 JSON: HTTP %s %s" % (status, text[:300]))
-        raise SystemExit(1)
+        print(f"GetUserToken 返回非 JSON: HTTP {status} {text[:300]}")
+        raise SystemExit(1) from None
     token = (data.get("Result") or {}).get("Token")
     if status != 200 or not token:
-        raise RuntimeError("GetUserToken 失败: HTTP %s %s" % (status, text[:300]))
+        raise RuntimeError(f"GetUserToken 失败: HTTP {status} {text[:300]}")
     return token
 
 
@@ -97,7 +96,7 @@ def main() -> int:
     token = get_token(session)
     print("      成功，JWT 长度 =", len(token))
 
-    print("[2/3] 查询签到状态 (device=%s) ..." % device)
+    print(f"[2/3] 查询签到状态 (device={device}) ...")
     st = call_api("/trae/api/v2/ug/checkin_credits/status", token, device)
     sb = st["body"]
     print("      HTTP", st["http"], "| code", sb.get("code"),

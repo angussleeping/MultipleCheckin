@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Agent Router（ps.air-outer.com，原域名 agentrouter.org）签到 API 模块
 
@@ -30,7 +29,7 @@ import sys
 import tempfile
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Optional
 from urllib.parse import parse_qs, urlparse
 
 import certifi
@@ -61,7 +60,7 @@ DEFAULT_USER_AGENT = (
 DEFAULT_QUOTA_PER_UNIT = 500000
 
 
-def build_github_cookies(session_value: str = '') -> Dict[str, str]:
+def build_github_cookies(session_value: str = '') -> dict[str, str]:
     """
     由 user_session 值构造请求 github.com 使用的 cookie 字典
 
@@ -74,7 +73,7 @@ def build_github_cookies(session_value: str = '') -> Dict[str, str]:
     Returns:
         Dict[str, str]: cookie 名值对
     """
-    cookies: Dict[str, str] = {}
+    cookies: dict[str, str] = {}
     session_value = (session_value or '').strip()
     if session_value:
         cookies['user_session'] = session_value
@@ -183,7 +182,7 @@ class AgentRouterAPI:
         return self._prepare(session)
 
     @staticmethod
-    def _json_of(response: requests.Response) -> Dict[str, Any]:
+    def _json_of(response: requests.Response) -> dict[str, Any]:
         try:
             body = response.json()
             return body if isinstance(body, dict) else {}
@@ -201,7 +200,7 @@ class AgentRouterAPI:
 
     # ------------------------------------------------------------------ 站点信息
 
-    def get_status(self) -> Dict[str, Any]:
+    def get_status(self) -> dict[str, Any]:
         """获取站点公开配置（含 github_client_id、额度换算比例）"""
         try:
             resp = request_with_retry(
@@ -285,7 +284,7 @@ class AgentRouterAPI:
         if not form_action.startswith('http'):
             form_action = GITHUB_HOST + form_action
 
-        payload: Dict[str, str] = {}
+        payload: dict[str, str] = {}
         for tag in re.findall(r'<input[^>]*>', page_html):
             if 'type="hidden"' not in tag:
                 continue
@@ -305,7 +304,7 @@ class AgentRouterAPI:
             logger.debug(f'提交授权表单后状态码异常: {resp.status_code}')
         return self._extract_code(resp)
 
-    def authorize_github(self, state: str, client_id: str = '') -> Tuple[Optional[str], str]:
+    def authorize_github(self, state: str, client_id: str = '') -> tuple[Optional[str], str]:
         """
         用 GitHub 登录态换取授权码
 
@@ -349,7 +348,7 @@ class AgentRouterAPI:
             '未能从 GitHub 获取授权码，请在浏览器中手动授权一次该应用后重试，'
             f'或检查账号是否开启了额外验证。授权地址: {resp.url[:200]}')
 
-    def login_with_code(self, session: requests.Session, code: str, state: str) -> Dict[str, Any]:
+    def login_with_code(self, session: requests.Session, code: str, state: str) -> dict[str, Any]:
         """
         用授权码完成登录（服务端在此完成签到）
 
@@ -366,7 +365,7 @@ class AgentRouterAPI:
             return {'success': False, 'error': message or f'登录失败（HTTP {resp.status_code}）'}
         return {'success': True, 'message': message, 'data': body.get('data')}
 
-    def login_by_github(self) -> Dict[str, Any]:
+    def login_by_github(self) -> dict[str, Any]:
         """
         完整走一遍 GitHub OAuth 登录（即签到动作）
 
@@ -397,7 +396,7 @@ class AgentRouterAPI:
 
         return self._finalize_login(session, result.get('data'), f'GitHub OAuth 登录（{via}）')
 
-    def _finalize_login(self, session: requests.Session, data: Any, mode: str) -> Dict[str, Any]:
+    def _finalize_login(self, session: requests.Session, data: Any, mode: str) -> dict[str, Any]:
         """
         收尾登录结果：补 new-api-user 头、提取用户信息与签到标记
 
@@ -421,7 +420,7 @@ class AgentRouterAPI:
 
     # ------------------------------------------------------------------ 账号信息
 
-    def get_user_self(self, session: requests.Session) -> Dict[str, Any]:
+    def get_user_self(self, session: requests.Session) -> dict[str, Any]:
         """
         查询当前登录用户信息（含额度）
 

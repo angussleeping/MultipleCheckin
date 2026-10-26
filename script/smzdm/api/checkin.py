@@ -1,9 +1,17 @@
-# -*- coding: utf-8 -*-
 """什么值得买 - 每日签到相关API(自 api.py 拆分, 经 Mixin 组合回 SmzdmAPI)"""
 
 import logging
+import sys
 import time
-from typing import Any, Dict, List, Optional
+from pathlib import Path
+from typing import Any, Optional
+
+# 确保 _shared 可导入(Mixin 独立运行时需要)
+_script_dir = Path(__file__).resolve().parent.parent.parent
+if str(_script_dir) not in sys.path:
+    sys.path.insert(0, str(_script_dir))
+
+from _shared.http_client import request_with_retry
 
 try:
     from .sign_calculator import calculate_sign_from_params
@@ -17,7 +25,7 @@ class CheckinMixin:
     """每日签到与众测报名相关API"""
     # ==================== 每日签到相关API ====================
 
-    def daily_checkin(self) -> Optional[Dict[str, Any]]:
+    def daily_checkin(self) -> Optional[dict[str, Any]]:
         """
         每日签到
 
@@ -51,7 +59,7 @@ class CheckinMixin:
             'Accept-Language': 'zh-Hans-CN;q=1'
         })
 
-        logger.info(f"📌 正在执行每日签到...")
+        logger.info("📌 正在执行每日签到...")
 
         try:
             response = request_with_retry(self.session, 'POST', url, data=params, headers=headers)
@@ -60,7 +68,7 @@ class CheckinMixin:
 
             if data.get('error_code') == '0' or data.get('error_code') == 0:
                 checkin_data = data.get('data', {})
-                logger.info(f"✅ 每日签到成功!")
+                logger.info("✅ 每日签到成功!")
                 return checkin_data
             else:
                 error_msg = data.get('error_msg', '未知错误')
@@ -181,12 +189,12 @@ class CheckinMixin:
             data = response.json()
 
             if data.get('error_code') == '0' or data.get('error_code') == 0:
-                logger.info(f"✅ 众测申请提交成功")
+                logger.info("✅ 众测申请提交成功")
                 return True
             elif data.get('error_code') == '1':
                 error_msg = data.get('error_msg', '')
                 if '已经申请过' in error_msg:
-                    logger.info(f"该众测商品已经申请过，跳过")
+                    logger.info("该众测商品已经申请过，跳过")
                     return False
                 else:
                     logger.error(f"众测申请失败: {error_msg}")
@@ -198,7 +206,7 @@ class CheckinMixin:
             logger.error(f"❌ 众测申请请求失败: {str(e)}")
             return False
 
-    def apply_zhongce_task(self, task: Dict[str, Any]) -> bool:
+    def apply_zhongce_task(self, task: dict[str, Any]) -> bool:
         """
         执行申请众测任务
 
@@ -268,7 +276,7 @@ class CheckinMixin:
                 success_count += 1
                 logger.info(f"    ✅ 申请成功 (进度: {success_count}/{remaining_count})")
             else:
-                logger.info(f"    ⏭️  跳过该商品")
+                logger.info("    ⏭️  跳过该商品")
 
             # 申请间隔
             if success_count < remaining_count:
@@ -283,7 +291,7 @@ class CheckinMixin:
         limit: int = 100,
         offset: int = 0,
         source_from: str = "任务活动"
-    ) -> Optional[Dict[str, Any]]:
+    ) -> Optional[dict[str, Any]]:
         """
         获取互动任务列表
 
@@ -328,7 +336,7 @@ class CheckinMixin:
             'Accept-Language': 'zh-Hans-CN;q=1'
         })
 
-        logger.info(f"📌 正在获取互动任务列表...")
+        logger.info("📌 正在获取互动任务列表...")
 
         try:
             response = request_with_retry(self.session, 'POST', url, data=params, headers=headers)
@@ -336,7 +344,7 @@ class CheckinMixin:
             data = response.json()
 
             if data.get('error_code') == '0' or data.get('error_code') == 0:
-                logger.info(f"✅ 成功获取互动任务列表")
+                logger.info("✅ 成功获取互动任务列表")
                 return data.get('data', {})
             else:
                 logger.error(f"❌ 获取互动任务列表失败: {data.get('error_msg', '未知错误')}")

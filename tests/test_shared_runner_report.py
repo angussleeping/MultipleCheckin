@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """_shared.runner 与 _shared.report 单元测试"""
 
 import os
@@ -8,12 +7,10 @@ import types
 from pathlib import Path
 from unittest.mock import patch
 
-import pytest
-
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'script'))
 
-from _shared.runner import apply_startup_jitter, run_accounts
 from _shared.report import build_summary, render_summary_text, send_summary_notification
+from _shared.runner import apply_startup_jitter, run_accounts
 
 
 class TestApplyStartupJitter:
@@ -33,7 +30,8 @@ class TestApplyStartupJitter:
 class TestRunAccounts:
     def test_runs_all_accounts(self):
         accounts = [{'account_name': 'a'}, {'account_name': 'b'}]
-        handler = lambda i, acc: {'account_name': acc['account_name'], 'success': True}
+        def handler(i, acc):
+            return {'account_name': acc['account_name'], 'success': True}
         with patch('time.sleep'):
             results = run_accounts(accounts, handler)
         assert len(results) == 2

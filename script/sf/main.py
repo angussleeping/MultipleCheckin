@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 new Env('顺丰快递积分任务');
 cron: 16 8 * * *
@@ -25,7 +24,7 @@ import time
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 from urllib.parse import parse_qs, unquote, urlparse
 
 # 添加项目根目录到Python路径（用于 import notification）
@@ -34,19 +33,19 @@ sys.path.insert(0, str(project_root))
 # 添加 script 目录到Python路径（用于 import _shared）
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from notification import send_notification, NotificationSound
-
 from _shared import (
-    setup_logger,
-    load_platform_accounts,
-    run_accounts,
     apply_startup_jitter,
     build_summary,
+    load_platform_accounts,
+    run_accounts,
     send_summary_notification,
+    setup_logger,
 )
 
 # 导入API模块（当前目录）
 from api import SFExpressAPI, ShareLoginInfo
+
+from notification import NotificationSound, send_notification
 
 # 延迟时间常量配置 (秒)
 DELAY_BETWEEN_ACCOUNTS = (3, 8)      # 账号间切换延迟
@@ -68,7 +67,7 @@ class SFAccountConfig:
     device_id: str
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "SFAccountConfig":
+    def from_dict(cls, data: dict[str, Any]) -> "SFAccountConfig":
         """从配置字典构建账号配置"""
         account_name = data.get("account_name") or "未命名账号"
         sign = data.get("sign") or ""
@@ -114,7 +113,7 @@ class SFTasksManager:
 
         self.config_path = config_path
         self.site_name = "顺丰速运"
-        self.accounts: List[SFAccountConfig] = []
+        self.accounts: list[SFAccountConfig] = []
         self.task_summary = []
         self.load_config()
 
@@ -149,7 +148,7 @@ class SFTasksManager:
             logger.error(f"加载配置文件失败: {e}")
             raise
 
-    def get_task_list(self, sf_api: SFExpressAPI) -> List[Dict[str, Any]]:
+    def get_task_list(self, sf_api: SFExpressAPI) -> list[dict[str, Any]]:
         """
         获取顺丰积分任务列表
 
@@ -169,7 +168,7 @@ class SFTasksManager:
             return []
 
     @staticmethod
-    def extract_task_code(task: Dict[str, Any]) -> str:
+    def extract_task_code(task: dict[str, Any]) -> str:
         """从任务信息中提取task_code"""
         task_code = task.get("taskCode")
         if task_code:
@@ -240,7 +239,7 @@ class SFTasksManager:
         logger.info(f"[{account.account_name}] 分享登录成功，已获取用户信息")
         return login_info
 
-    def auto_sign_and_fetch_package(self, sf_api: SFExpressAPI, account_name: str) -> Dict[str, Any]:
+    def auto_sign_and_fetch_package(self, sf_api: SFExpressAPI, account_name: str) -> dict[str, Any]:
         """
         自动签到并获取礼包
 
@@ -286,7 +285,7 @@ class SFTasksManager:
             logger.error(f"[{account_name}] 自动签到时发生错误: {e}")
             return {'success': False, 'days': 0, 'error': str(e)}
 
-    def process_single_task(self, task: Dict[str, Any], sf_api: SFExpressAPI, account_name: str) -> Dict[str, Any]:
+    def process_single_task(self, task: dict[str, Any], sf_api: SFExpressAPI, account_name: str) -> dict[str, Any]:
         """
         处理单个任务
 
@@ -330,7 +329,7 @@ class SFTasksManager:
             logger.error(f"[{account_name}] 执行任务 {task_title} 时发生错误: {e}")
             return {'title': task_title, 'success': False, 'points': 0}
 
-    def process_account_tasks(self, account: SFAccountConfig) -> Dict[str, Any]:
+    def process_account_tasks(self, account: SFAccountConfig) -> dict[str, Any]:
         """
         处理单个账号的所有任务
 
@@ -469,7 +468,7 @@ class SFTasksManager:
 
         return account_stat
 
-    def _run_one_account(self, idx: int, account: SFAccountConfig) -> Dict[str, Any]:
+    def _run_one_account(self, idx: int, account: SFAccountConfig) -> dict[str, Any]:
         """run_accounts 的单账号 handler，隔离未捕获异常"""
         logger.info(f"\n{'='*60}")
         logger.info(f"处理第 {idx + 1}/{len(self.accounts)} 个账号")
@@ -580,7 +579,7 @@ def main():
         # 发送错误通知
         try:
             send_notification(
-                title=f"顺丰快递积分任务异常 ❌",
+                title="顺丰快递积分任务异常 ❌",
                 content=(
                     f"❌ 任务执行异常\n"
                     f"💬 错误信息: {str(e)}\n"
