@@ -204,8 +204,11 @@ python wps.py --help
 ## 依赖库
 
 ```bash
-pip install requests pycryptodome
+pip install requests pycryptodome urllib3
 ```
+
+> 本脚本依赖仓库的公共基础设施（`script/_shared/`、`notification/`），必须在完整仓库环境下运行。
+> `urllib3` 为 `_shared/http_client.py` 的指数退避重试提供支持。
 
 ## 注意事项
 
@@ -241,6 +244,12 @@ pip install requests pycryptodome
    - 无需手动更新
 
 ## 更新日志
+
+### v1.3.1 (2026-10-28)
+- ✅ **收敛依赖**：删除了 wps.py 里内置的 70 行降级实现（裸 `requests.Session`、函数级重试、简化 logger 等），强制使用仓库公共模块 `_shared`
+- ✅ **自动获得**：敏感字段日志脱敏（cookie/token 自动打码）、urllib3 指数退避重试（429/5xx 自动重试）、账号异常隔离
+- ✅ **代码量**：v1.3 的 2220 行 → 1966 行，进一步净减 254 行
+- ✅ **模式对齐**：路径 hack 改为和 `script/workbuddy` / `script/trae` 相同的三路径模式
 
 ### v1.3 (2026-10-28)
 - ✅ **合并**：将原 `main.py` / `task_center.py` / `daily_benefits.py` / `api.py` / `benefit_entry.py` / `logging_utils.py` 六个文件整合为单一 `wps.py`

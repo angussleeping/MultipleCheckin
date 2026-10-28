@@ -33,90 +33,26 @@ from Crypto.PublicKey import RSA
 from Crypto.Util.Padding import pad
 
 # ---------------------------------------------------------------------------
-# 路径 & 共享模块导入
+# 路径 & 共享模块导入（对齐 script/workbuddy、script/trae 的布局）
 # ---------------------------------------------------------------------------
-# 原始脚本假设本文件位于 <project>/script/wps/ 目录下，向上两级是项目根目录
-# 如果找不到 _shared / notification，这里做静默降级 —— 允许脚本在独立模式下运行
-_SCRIPT_DIR = Path(__file__).resolve().parent
-project_root = _SCRIPT_DIR.parent.parent
-sys.path.insert(0, str(project_root))
-sys.path.insert(0, str(project_root / "script"))
+# 本文件位于 <project>/script/wps/ 目录
+script_dir = Path(__file__).resolve().parent
+script_root = script_dir.parent          # <project>/script/
+project_root = script_dir.parent.parent  # <project>/
+sys.path.insert(0, str(project_root))    # notification 在此
+sys.path.insert(0, str(script_root))     # _shared 在此
 
-try:
-    from _shared import (
-        apply_startup_jitter,
-        build_summary,
-        create_session,
-        load_platform_accounts,
-        request_with_retry,
-        run_accounts,
-        send_summary_notification,
-        setup_logger,
-    )
-    from notification import NotificationSound, send_notification
-    _HAS_SHARED = True
-except ImportError:  # 兼容独立运行模式（无 _shared / notification）
-    _HAS_SHARED = False
-    NotificationSound = None  # type: ignore
-
-    def create_session():
-        session = requests.Session()
-        session.headers.update({
-            "User-Agent": (
-                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36"
-            ),
-        })
-        return session
-
-    def request_with_retry(session, method, url, **kwargs):
-        for attempt in range(3):
-            try:
-                return session.request(method, url, timeout=30, **kwargs)
-            except requests.RequestException:
-                if attempt == 2:
-                    raise
-                time.sleep(1)
-        raise RuntimeError("unreachable")
-
-    def setup_logger(name="wps", level=logging.INFO):
-        logger = logging.getLogger(name)
-        if not logger.handlers:
-            handler = logging.StreamHandler()
-            handler.setFormatter(logging.Formatter(
-                "%(asctime)s [%(levelname)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
-            ))
-            logger.addHandler(handler)
-        logger.setLevel(level)
-        return logger
-
-    def apply_startup_jitter(_env_var, max_seconds):
-        time.sleep(random.uniform(0, max_seconds))
-
-    def load_platform_accounts(_platform, config_path):
-        try:
-            with open(config_path, "r", encoding="utf-8") as fh:
-                data = json.load(fh)
-            return data.get("wps", {}).get("accounts", []) or []
-        except (FileNotFoundError, json.JSONDecodeError, AttributeError):
-            return []
-
-    def run_accounts(accounts, processor, interval_range=(3, 6)):
-        results = []
-        for idx, account in enumerate(accounts):
-            results.append(processor(idx, account))
-            if idx < len(accounts) - 1:
-                time.sleep(random.uniform(*interval_range))
-        return results
-
-    def build_summary(results):
-        total = len(results)
-        success = sum(1 for r in results if r.get("success"))
-        return {"total": total, "success": success, "failed": total - success}
-
-    def send_summary_notification(title, results, **kwargs):
-        # 独立模式下不推送
-        return None
+from _shared import (
+    apply_startup_jitter,
+    build_summary,
+    create_session,
+    load_platform_accounts,
+    request_with_retry,
+    run_accounts,
+    send_summary_notification,
+    setup_logger,
+)
+from notification import NotificationSound
 
 
 # ---------------------------------------------------------------------------
@@ -1793,7 +1729,7 @@ class DailyBenefitsTasks:
         self.logger.info("%s", "=" * 60)
 
     def _send_notification(self) -> None:
-        if not self.account_results or not _HAS_SHARED:
+        if not self.account_results:
             return
         summary = build_summary(self.account_results)
         send_summary_notification(
@@ -1801,7 +1737,7 @@ class DailyBenefitsTasks:
             self.account_results,
             title="WPS天天领福利结果通知",
             summary=summary,
-            sound=NotificationSound.BIRDSONG if NotificationSound else None,
+            sound=NotificationSound.BIRDSONG,
         )
 
 
@@ -2038,7 +1974,7 @@ class WPSTaskCenterPage:
         self.logger.info("%s", "=" * 60)
 
     def _send_notification(self) -> None:
-        if not self.account_results or not _HAS_SHARED:
+        if not self.account_results:
             return
         summary = build_summary(self.account_results)
         send_summary_notification(
@@ -2046,7 +1982,7 @@ class WPSTaskCenterPage:
             self.account_results,
             title="WPS任务中心结果通知",
             summary=summary,
-            sound=NotificationSound.BIRDSONG if NotificationSound else None,
+            sound=NotificationSound.BIRDSONG,
         )
 
 
@@ -2145,8 +2081,7 @@ class WPSMultiPageRunner:
             interval_range=(3, 6),
         )
         self._print_summary(account_results)
-        if _HAS_SHARED:
-            self._send_notification(account_results)
+        self._send_notification(account_results)
 
     def _print_summary(self, account_results) -> None:
         self.logger.info("")
@@ -2169,7 +2104,7 @@ class WPSMultiPageRunner:
             account_results,
             title="WPS多页面任务结果通知",
             summary=summary,
-            sound=NotificationSound.BIRDSONG if NotificationSound else None,
+            sound=NotificationSound.BIRDSONG,
         )
 
 
