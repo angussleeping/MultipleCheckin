@@ -1,4 +1,4 @@
-# WPS自动签到脚本
+# WPS自动签到抽奖脚本
 
 ## ⚠️ 重要提示
 
@@ -27,41 +27,36 @@
 - ✅ 多账号管理
 - ✅ 自动获取RSA加密公钥
 - ✅ 自动生成加密参数
-- ✅ 自动签到操作
+- ✅ 自动签到操作（任务中心 + 打卡免费领会员）
 - ✅ 自动抽奖功能（可自定义抽奖次数）
-- ✅ 任务中心页面独立执行
-- ✅ 天天领福利页面独立执行
-- ✅ 打卡免费领会员
-- ✅ 会员免费试用申请
-- ✅ 天天抽奖
-- ✅ 主入口统一执行多个页面任务
-- ✅ 账号间随机延迟（5-10秒）
-- ✅ 详细的签到奖励显示
-- ✅ 每次抽奖结果展示
-- ✅ 推送执行结果（支持Bark推送）
+- ✅ 任务中心签到、积分查询、抽奖
+- ✅ 天天领福利：打卡免费领会员、会员免费试用、天天抽奖、第7天奖励
+- ✅ CLI 参数化入口，按需选择执行页面
+- ✅ 账号间随机延迟（3-10秒）
+- ✅ 推送执行结果（支持 Bark 等多种通道）
 
 ### 页面说明
 
-- `任务中心`：执行原有的签到、积分查询和抽奖流程
-- `天天领福利`：自动定位活动入口并执行 `打卡免费领会员`、`会员免费试用`、`天天抽奖`
-- `main.py`：WPS 统一入口，按账号顺序依次执行 `任务中心` 和 `天天领福利`
+| 页面 | 功能 |
+|---|---|
+| `task_center` | 任务中心签到、积分查询、任务中心抽奖 |
+| `daily_benefits` | 天天领福利：打卡签到 + 会员免费试用 + 天天抽奖 + 第7天奖励 |
+| `all`（默认） | 依次执行上述两个页面 |
 
 ## 目录结构
 
 ```text
 wps/
-├── api.py                # 任务中心 API 接口和加密模块
-├── daily_benefits.py     # 天天领福利页面脚本
-├── main.py               # WPS 统一入口
-├── task_center.py        # 任务中心页面脚本
-└── README.md             # 本文档
+├── wps.py        # 统一入口（整合了原 main.py / task_center.py / daily_benefits.py 的全部功能）
+├── README.md     # 本文档
+└── img.png       # Cookie 获取步骤配图
 ```
 
 ## 配置说明
 
 ### 1. 账号配置
 
-在项目根目录的 `config/token.json` 文件中配置WPS账号信息：
+在项目根目录的 `config/token.json` 文件中配置 WPS 账号信息：
 
 ```json
 {
@@ -88,15 +83,14 @@ wps/
 **配置参数说明：**
 
 - `account_name`: 账号名称，用于日志和通知中识别账号
-- `user_id`: **【必需】** WPS用户ID，从Cookie中的 `uid` 字段获取
-- `cookies`: **【必需】** WPS登录Cookie
+- `user_id`: **【必需】** WPS用户ID，从 Cookie 中的 `uid` 字段获取（任务中心页面需要）
+- `cookies`: **【必需】** WPS 登录 Cookie
 - `user_agent`: 【可选】用户代理字符串，不填则使用默认值
-- `max_lottery_limit`: 【可选】最大抽奖次数限制，默认为2次。设置后将限制每次最多抽奖的次数，即使账户有更多抽奖机会
+- `max_lottery_limit`: 【可选】最大抽奖次数限制，默认为 5 次。即使账户有更多抽奖机会也会被截断
 
 **⚠️ 重要提示：**
-- `user_id` 是必需参数，如果配置中没有 `user_id`，该账号将被跳过，不执行签到
-- `user_id` 可以从Cookie中的 `uid` 字段获取
-- `max_lottery_limit` 用于控制抽奖次数，避免过度消耗抽奖机会。例如设置为5，则每次最多抽奖5次，即使账户有10次机会
+- `user_id` 是必需参数（仅任务中心页面用到），如果配置中没有 `user_id`，该账号将跳过任务中心签到（但天天领福利页面仍可正常执行）
+- `max_lottery_limit` 用于控制抽奖次数，避免过度消耗抽奖机会
 
 ### 2. 获取Cookies和User ID
 
@@ -147,30 +141,9 @@ uid=655953169; wps_sid=V02S...; csrf=...
 - ✅ 避免Cookie不完整导致签到失败
 - ⚠️ 不要使用浏览器地址栏复制Cookie，可能缺少必要字段
 
-**配置示例：**
-
-假设从接口获取的Cookie为：
-```
-uid=655953169; wps_sid=V02Syi5I...; csrf=SCXAn6r5...
-```
-
-则在配置文件中填写：
-```json
-{
-  "account_name": "我的账号",
-  "user_id": 655953169,           // 从Cookie中的uid字段提取，或从用户中心页面获取
-  "cookies": "uid=655953169; wps_sid=V02Syi5I...; csrf=SCXAn6r5...",  // 完整Cookie
-  "user_agent": "Mozilla/5.0 ..."
-}
-```
-
-**说明：**
-- `user_id`: 从Cookie中的uid字段提取（655953169），或从用户中心页面获取
-- `cookies`: 从接口请求中复制的完整Cookie字符串
-
 ### 3. 推送配置（可选）
 
-如需启用推送通知，需要在 `config/notification.json` 中配置Bark推送参数，或在环境变量中配置：
+如需启用推送通知，需要在 `config/notification.json` 中配置 Bark 等通道参数，或在环境变量中配置：
 
 ```bash
 export BARK_PUSH="YOUR_BARK_KEY"           # Bark推送密钥（必需）
@@ -188,34 +161,44 @@ export BARK_LEVEL="active"                 # 推送级别（可选）
 
 ## 使用方法
 
-### 直接运行
+### 统一入口（全部执行）
 
 ```bash
-cd /Users/cat/Projects/python/PrivateProjects/ZaiZaiCat-Checkin/script/wps
-python main.py
+cd script/wps
+python wps.py
 ```
 
-### 单独运行任务中心
+默认依次执行 `任务中心` → `天天领福利`。
+
+### 指定执行单一页面
 
 ```bash
-cd /Users/cat/Projects/python/PrivateProjects/ZaiZaiCat-Checkin/script/wps
-python task_center.py
+# 只跑任务中心（签到 + 抽奖）
+python wps.py --page task_center
+
+# 只跑天天领福利（打卡 + 试用 + 抽奖）
+python wps.py --page daily_benefits
 ```
 
-### 单独运行天天领福利
+### 完整参数
 
 ```bash
-cd /Users/cat/Projects/python/PrivateProjects/ZaiZaiCat-Checkin/script/wps
-python daily_benefits.py
+python wps.py --help
+
+# usage: wps.py [-h] [--page {task_center,daily_benefits,all}] [--config CONFIG]
+#
+# --page/-p   选择执行的页面（默认 all）
+# --config/-c 指定账号配置文件路径（默认项目根目录 config/token.json）
 ```
 
 ### 定时任务
 
-可以使用cron或青龙面板等工具设置定时执行：
-
 ```bash
-# 每天早上9点执行
-0 9 * * * cd /path/to/ZaiZaiCat-Checkin/script/wps && python main.py
+# 每天早上 9 点执行（全部页面）
+0 9 * * * cd /path/to/ZaiZaiCat-Checkin/script/wps && python wps.py
+
+# 每天凌晨 3 点只跑任务中心
+0 3 * * * cd /path/to/ZaiZaiCat-Checkin/script/wps && python wps.py -p task_center
 ```
 
 ## 依赖库
@@ -237,28 +220,35 @@ pip install requests pycryptodome
 
 3. **抽奖次数控制**
    - 可通过 `max_lottery_limit` 参数控制每次最多抽奖次数
-   - 未设置时默认为2次
+   - 未设置时默认为 5 次
    - 避免过度消耗抽奖机会
 
 4. **活动页面执行**
-   - `main.py` 会按账号顺序依次执行 `任务中心` 和 `天天领福利`
-   - 如只想执行其中一个页面，可直接运行对应的页面脚本
+   - 默认依次执行两个页面；通过 `--page` 参数可选择只跑其中一个
    - `天天领福利` 依赖官方页面活动参数，页面内容后续可能随官方活动更新
 
 5. **账号间延迟**
-   - 多账号时自动在账号间添加5-10秒随机延迟
+   - 多账号时自动在账号间添加随机延迟
    - 提高安全性，避免被检测为异常操作
 
 6. **错误处理**
    - 脚本会自动处理网络错误和签到失败
-   - Token过期时会提示重新登录
-   - 如持续失败，请检查Cookie是否过期
+   - Token 过期时会提示重新登录，并停止执行该账号后续页面
+   - 如持续失败，请检查 Cookie 是否过期
 
 7. **公钥更新**
    - 公钥会定期从服务器获取
    - 无需手动更新
 
 ## 更新日志
+
+### v1.3 (2026-10-28)
+- ✅ **合并**：将原 `main.py` / `task_center.py` / `daily_benefits.py` / `api.py` / `benefit_entry.py` / `logging_utils.py` 六个文件整合为单一 `wps.py`
+- ✅ **CLI 参数化**：通过 `--page` / `-p` 参数按需选择执行页面（`all` / `task_center` / `daily_benefits`）
+- ✅ **去重**：统一了三个脚本中重复定义的 `_is_auth_expired_message`、`_safe_int`、`_parse_cookies` 等工具函数
+- ✅ **独立运行兼容**：在缺失 `_shared` / `notification` 模块时自动降级，不推送但签到逻辑仍可跑通
+- ✅ **代码行数**：原 13 个文件约 150KB → 单一文件 104KB
+- ✅ **目录整洁**：`script/wps/` 只剩 `wps.py` + `README.md` + `img.png`
 
 ### v1.2 (2026-03-11)
 - ✅ 将原有 WPS 功能拆分为 `任务中心` 独立页面脚本
@@ -277,23 +267,22 @@ pip install requests pycryptodome
 - ✅ 改进错误处理机制
 
 ### v1.0 (2025-12-01)
-- ✅ 重构代码结构，分离API和主逻辑
+- ✅ 重构代码结构，分离 API 和主逻辑
 - ✅ 支持统一配置文件管理
 - ✅ 支持多账号管理
-- ✅ 自动获取RSA公钥
+- ✅ 自动获取 RSA 公钥
 - ✅ 集成推送通知功能
 - ✅ 完善日志输出
-- ✅ 符合开发规范
 
 ## 问题反馈
 
 如遇到问题，请检查：
-1. Cookie是否有效
-2. User ID是否正确配置
+1. Cookie 是否有效
+2. User ID 是否正确配置
 3. 网络连接是否正常
-4. 依赖库是否正确安装
+4. 依赖库是否正确安装（`requests` / `pycryptodome`）
 5. 配置文件格式是否正确
-6. max_lottery_limit参数是否合理设置
+6. `max_lottery_limit` 参数是否合理设置
 
 ## 免责声明
 
