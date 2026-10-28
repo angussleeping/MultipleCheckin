@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 new Env('WPS签到抽奖');
-cron: 18 10 * * *
+cron: 18 4 * * *
 """
 
 """
