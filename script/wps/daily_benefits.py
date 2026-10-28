@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 new Env('WPS天天领福利');
-cron: 1 1 1 1 1
+cron: 23 6 * * *
 """
 
 """
