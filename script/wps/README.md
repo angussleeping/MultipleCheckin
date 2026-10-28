@@ -180,15 +180,26 @@ python wps.py --page task_center
 python wps.py --page daily_benefits
 ```
 
+### Dry-run：只查状态，不执行
+
+```bash
+# 快速检查所有账号当前状态（签到天数、抽奖次数、积分）
+# 不执行任何修改性操作：不抽奖、不领奖励、不申请试用
+# 任务中心签到是服务端幂等接口，dry-run 会调用（返回"今日已签"也不修改状态）
+python wps.py --dry-run
+```
+
 ### 完整参数
 
 ```bash
 python wps.py --help
 
 # usage: wps.py [-h] [--page {task_center,daily_benefits,all}] [--config CONFIG]
+#               [--dry-run]
 #
-# --page/-p   选择执行的页面（默认 all）
-# --config/-c 指定账号配置文件路径（默认项目根目录 config/token.json）
+# --page/-p     选择执行的页面（默认 all）
+# --config/-c   指定账号配置文件路径（默认项目根目录 config/token.json）
+# --dry-run     仅查询账号当前状态、不执行签到/抽奖/申请等修改性操作
 ```
 
 ### 定时任务
@@ -244,6 +255,11 @@ pip install requests pycryptodome urllib3
    - 无需手动更新
 
 ## 更新日志
+
+### v1.3.2 (2026-10-28)
+- ✅ **--dry-run**：新增 `--dry-run` 参数，仅查询状态不执行签到/抽奖/试用/领奖励。天天领福利页 dry-run 查签到天数、试用剩余次数、抽奖剩余次数；任务中心 dry-run 签到接口幂等调用后跳过抽奖
+- ✅ **页面级隔离**：多页面 runner 中移除了"某页面 token 过期则 break 后续页面"的逻辑，改为继续执行。WPS 各页面 cookie 相互独立，一个过期不影响另一个
+- ✅ **dry-run 不推送**：dry-run 模式下跳过通知发送（状态检查不算真正执行）
 
 ### v1.3.1 (2026-10-28)
 - ✅ **收敛依赖**：删除了 wps.py 里内置的 70 行降级实现（裸 `requests.Session`、函数级重试、简化 logger 等），强制使用仓库公共模块 `_shared`

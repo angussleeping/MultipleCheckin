@@ -1586,7 +1586,57 @@ class DailyBenefitsTasks:
             return result
 
         current_page_info = page_info_result["data"]
-        initial_fragment_result = api.get_fragment_collect_info(current_page_info)
+
+        # ---- 状态查询（dry-run 和正常执行都跑）----
+        fragment_status_info = api.get_fragment_collect_info(current_page_info)
+        lottery_status_info = api.get_daily_lottery_info(current_page_info)
+        member_trial_status = api.get_member_trial_info(current_page_info)
+
+        # dry-run：只查状态、不执行任何修改性操作
+        if getattr(self, "dry_run", False):
+            result["success"] = True
+            result["free_member_checkin"] = {
+                "sign_date": fragment_status_info.get("sign_date", ""),
+                "sign_status": "signed" if fragment_status_info.get("is_signed") else "unsigned",
+                "signed_days": fragment_status_info.get("signed_days", 0),
+                "message": (
+                    f"连续第 {fragment_status_info.get('signed_days', 0)} 天"
+                    if fragment_status_info.get("signed_days")
+                    else "未签到"
+                ),
+            }
+            result["member_trial"] = {
+                "remain_times": member_trial_status.get("remain_times", 0),
+                "candidates": [
+                    {"title": d.get("title", ""), "stock": d.get("stock", 0)}
+                    for d in member_trial_status.get("details", [])
+                ],
+                "message": f"剩余试用申请次数: {member_trial_status.get('remain_times', 0)}",
+            }
+            result["daily_lottery"] = {
+                "remain_times": lottery_status_info.get("remain_times", 0),
+                "sign_day": lottery_status_info.get("sign_day", 0),
+                "message": (
+                    f"剩余抽奖次数: {lottery_status_info.get('remain_times', 0)}，"
+                    f"连续签到第 {lottery_status_info.get('sign_day', 0)} 天"
+                ),
+            }
+            msg_parts = [
+                result["free_member_checkin"]["message"],
+                result["member_trial"]["message"],
+                result["daily_lottery"]["message"],
+                "dry-run 状态检查，未执行签到/抽奖",
+            ]
+            result["message"] = " | ".join(msg_parts)
+            for emoji, sub in [
+                ("📅 打卡签到", result["free_member_checkin"]),
+                ("🎁 会员试用", result["member_trial"]),
+                ("🎰 天天抽奖", result["daily_lottery"]),
+            ]:
+                log_task_result(account_logger, emoji, f"ℹ️ dry-run: {sub['message']}")
+            return result
+
+        initial_fragment_result = fragment_status_info
         if initial_fragment_result["success"] and safe_int(initial_fragment_result.get("signed_days", 0)) >= 7:
             pending = self._claim_daily_lottery_reward_if_ready(
                 api=api, portal_result=portal_result, page_info=current_page_info,
@@ -1672,14 +1722,15 @@ class DailyBenefitsTasks:
 
         return result
 
-    def run(self) -> None:
+    def run(self, dry_run: bool = False) -> None:
         self.logger.info("%s", "=" * 60)
-        self.logger.info("WPS 天天领福利任务开始")
+        self.logger.info("WPS 天天领福利任务开始%s", "（dry-run 状态检查）" if dry_run else "")
         self.logger.info("%s", "=" * 60)
         if not self.accounts:
             self.logger.warning("没有可处理的 WPS 账号")
             return
         apply_startup_jitter("WPS_JITTER_MAX", 600)
+        self.dry_run = dry_run
         self.account_results = run_accounts(
             self.accounts,
             lambda _idx, account: self.process_account(account),
@@ -1842,6 +1893,19 @@ class WPSTaskCenterPage:
                 max_lottery_limit = 5
             actual_lottery_times = min(lottery_times, max_lottery_limit)
 
+            # dry-run：签到已执行（服务端幂等返回今日已签/成功），只跳过抽奖
+            if getattr(self, "dry_run", False):
+                points = result["user_info"].get("points", 0)
+                advent = result["user_info"].get("advent_points", 0)
+                log_task_result(account_logger, "💎 积分", f"ℹ️ dry-run: {points} pt (抽奖 {lottery_times} 次可用)")
+                log_task_result(account_logger, "🎰 抽奖", f"ℹ️ dry-run: 跳过，可用 {lottery_times} 次")
+                log_task_result(account_logger, "💎 即将过期积分", f"{advent} pt")
+                if not result["message"]:
+                    result["message"] = "dry-run 状态正常，已完成签到查询（服务端幂等），未执行抽奖"
+                result["message"] += " | dry-run: 跳过抽奖"
+                result["lottery_info"] = {"total_attempts": 0, "successful_draws": 0, "results": [], "prizes": [], "skipped": True}
+                return result
+
             if lottery_times > 0:
                 lottery_results = []
                 prize_list = []
@@ -1920,14 +1984,15 @@ class WPSTaskCenterPage:
             )
         return lines
 
-    def run(self) -> None:
+    def run(self, dry_run: bool = False) -> None:
         self.logger.info("%s", "=" * 60)
-        self.logger.info("WPS任务中心任务开始")
+        self.logger.info("WPS任务中心任务开始%s", "（dry-run 状态检查）" if dry_run else "")
         self.logger.info("%s", "=" * 60)
         if not self.accounts:
             self.logger.warning("没有需要处理的账号")
             return
         apply_startup_jitter("WPS_JITTER_MAX", 600)
+        self.dry_run = dry_run
         self.account_results = run_accounts(
             self.accounts,
             lambda _idx, account: self.process_account(account),
@@ -2051,10 +2116,10 @@ class WPSMultiPageRunner:
             if not page_result.get("success", False):
                 account_result["success"] = False
 
-            # Token 过期则停止该账号后续页面
+            # 页面级隔离：某页面 token 过期不影响其他页面继续跑
+            # （WPS 各页面独立 cookie，一个过期另一个可能仍有效）
             if page_result.get("auth_expired") or is_auth_expired(page_result.get("message", "")):
-                self.logger.warning("[%s] 登录态已失效，停止执行后续页面", account_name)
-                break
+                self.logger.warning("[%s] 页面 %s 登录态已失效，继续执行后续页面", account_name, page_name)
 
             if page_index < len(self.page_runners) - 1:
                 time.sleep(random.uniform(1, 2))
@@ -2066,26 +2131,32 @@ class WPSMultiPageRunner:
         log_account_end(self.logger, account_name, account_result["success"])
         return account_result
 
-    def run(self) -> None:
+    def run(self, dry_run: bool = False) -> None:
         log_startup(self.logger, len(self.accounts))
         if not self.accounts:
             self.logger.warning("没有需要处理的账号")
             return
         apply_startup_jitter("WPS_JITTER_MAX", 600)
-        self.logger.info("将依次执行页面: %s", " → ".join(self.page_names))
+        self.logger.info("将依次执行页面: %s%s", " → ".join(self.page_names),
+                         "（dry-run 状态检查，仅查询不执行）" if dry_run else "")
         self.logger.info("")
+
+        # 透传 dry_run 给子 runner
+        for _name, runner in self.page_runners:
+            runner.dry_run = dry_run
 
         account_results = run_accounts(
             self.accounts,
             self._process_account,
             interval_range=(3, 6),
         )
-        self._print_summary(account_results)
-        self._send_notification(account_results)
+        self._print_summary(account_results, dry_run=dry_run)
+        if not dry_run:
+            self._send_notification(account_results)
 
-    def _print_summary(self, account_results) -> None:
+    def _print_summary(self, account_results, *, dry_run: bool = False) -> None:
         self.logger.info("")
-        log_banner(self.logger, "多页面任务执行结果统计")
+        log_banner(self.logger, "多页面任务执行结果统计" + ("（dry-run）" if dry_run else ""))
         summary = build_summary(account_results)
         self.logger.info("总账号数: %s", summary["total"])
         self.logger.info("执行成功: %s", summary["success"])
@@ -2123,6 +2194,12 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         default=None,
         help="账号配置文件路径（默认读取项目根目录 config/token.json）",
     )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        default=False,
+        help="仅查询账号当前状态、不执行签到/抽奖/申请等修改性操作",
+    )
     return parser
 
 
@@ -2137,7 +2214,7 @@ def main() -> None:
             pages = [args.page]
 
         runner = WPSMultiPageRunner(pages=pages, config_path=args.config)
-        runner.run()
+        runner.run(dry_run=args.dry_run)
 
     except FileNotFoundError as exc:
         logger.error("❌ 错误: %s", exc)
