@@ -247,7 +247,7 @@ pip install requests pycryptodome urllib3
 
 6. **错误处理**
    - 脚本会自动处理网络错误和签到失败
-   - Token 过期时会提示重新登录，并停止执行该账号后续页面
+   - Token 过期时会提示重新登录；多页面模式下某页面过期不再阻断其他页面继续执行
    - 如持续失败，请检查 Cookie 是否过期
 
 7. **公钥更新**
@@ -305,7 +305,7 @@ pip install requests pycryptodome urllib3
 1. Cookie 是否有效
 2. User ID 是否正确配置
 3. 网络连接是否正常
-4. 依赖库是否正确安装（`requests` / `pycryptodome`）
+4. 依赖库是否正确安装（`requests` / `pycryptodome` / `urllib3`）— 本脚本依赖仓库 `_shared` 公共模块，必须在完整仓库环境下运行
 5. 配置文件格式是否正确
 6. `max_lottery_limit` 参数是否合理设置
 

@@ -63,7 +63,7 @@ vi token.json              # 填写各平台账号,字段说明见下文
 | 名称 | 命令 | 定时规则 |
 |---|---|---|
 | 顺丰签到 | `task MultipleCheckin/script/sf/main.py` | `0 8 * * *` |
-| WPS 签到 | `task MultipleCheckin/script/wps/main.py` | `30 8 * * *` |
+| WPS 签到 | `task MultipleCheckin/script/wps/wps.py` | `30 8 * * *` |
 | SMZDM 签到 | `task MultipleCheckin/script/smzdm/sign_daily_task/main.py` | `0 9 * * *` |
 | WorkBuddy 签到 | `task MultipleCheckin/script/workbuddy/main.py` | `30 8 * * *` |
 | Trae CN 签到 | `task MultipleCheckin/script/trae/main.py` | `0 9 * * *` |
@@ -88,7 +88,7 @@ git clone https://github.com/angussleeping/MultipleCheckin.git
 
 | 名称 | 命令 |
 |---|---|
-| WPS 签到 | `python3 /root/scripts/MultipleCheckin/script/wps/main.py` |
+| WPS 签到 | `python3 /root/scripts/MultipleCheckin/script/wps/wps.py` |
 | SMZDM 签到 | `python3 /root/scripts/MultipleCheckin/script/smzdm/sign_daily_task/main.py` |
 
 依赖安装（一次性）：
@@ -104,7 +104,7 @@ pip3 install -r /root/scripts/MultipleCheckin/requirements.txt
 | 平台 | 脚本路径 | 状态 | 说明 |
 |---|---|---|---|
 | 🚚 顺丰速运 | `script/sf/main.py` | ✅ 可用 | 支持签到和积分任务 |
-| 📝 WPS Office | `script/wps/main.py` | ✅ 可用 | 支持任务中心和天天领福利双页面任务 |
+| 📝 WPS Office | `script/wps/wps.py` | ✅ 可用 | 任务中心 + 天天领福利，统一入口 + `--dry-run` + 页面级隔离 |
 | 💰 什么值得买 | `script/smzdm/sign_daily_task/main.py` | ✅ 可用 | 支持每日签到、众测/互动/爆料任务 |
 | 🤖 WorkBuddy | `script/workbuddy/main.py` | ✅ 可用 | 支持每日签到、令牌自动续期 |
 | 🐅 Trae CN | `script/trae/main.py` | ✅ 可用 | 支持积分模式每日签到 |
@@ -315,10 +315,9 @@ MultipleCheckin/
 │   │   └── report.py               # 结果汇总 + 推送
 │   ├── sf/                         # 顺丰速运
 │   ├── wps/                        # WPS Office
-│   │   ├── main.py
-│   │   ├── task_center.py          # 任务中心
-│   │   ├── daily_benefits.py       # 天天领福利
-│   │   └── benefit_entry.py        # 福利入口发现
+│   │   ├── wps.py                  # 统一入口（任务中心 + 天天领福利）
+│   │   ├── README.md
+│   │   └── img.png                 # Cookie 获取配图
 │   ├── smzdm/                      # 什么值得买
 │   │   ├── api/
 │   │   │   ├── api.py              # SmzdmAPI 门面（经 Mixin 组合）
@@ -352,6 +351,15 @@ MultipleCheckin/
 ---
 
 ## 📝 更新日志
+
+### 2026-10-28（WPS 脚本合并 + 功能增强）
+
+- 🧹 **目录收敛**：`script/wps/` 从 6 个 Python 文件（main / task_center / daily_benefits / api / benefit_entry / logging_utils）合并为单一 `wps.py` 统一入口
+- ✂️ **代码量**：~4400 行 → 2038 行（-54%）
+- 🔗 **收敛 `_shared`**：删除 70 行内置降级实现，强制复用 `_shared` 公共基础设施，自动获得：敏感字段日志脱敏（cookie/token 打码）、urllib3 指数退避重试（429/5xx）、账号异常隔离
+- 🆕 **`--dry-run`**：仅查询账号状态（签到天数、积分、抽奖次数）、不执行签到/抽奖/试用/领奖励
+- 🛡️ **页面级隔离**：多页面 runner 中某页面 cookie 过期不再 break 后续页面，改为 continue
+- 📝 **README 同步**：根 README 定时任务命令、项目结构树、脚本路径全部指向新入口 `wps.py`
 
 ### 2026-10-26（代码审计优化）
 
