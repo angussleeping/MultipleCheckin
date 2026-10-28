@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 new Env('WPS任务中心');
-cron: 1 1 1 1 1
+cron:16 3 * * *
 """
 
 """
