@@ -45,6 +45,7 @@ sys.path.insert(0, str(script_dir))
 
 from _shared import (
     apply_startup_jitter,
+    get_default_config_path,
     load_platform_accounts,
     run_accounts,
     send_summary_notification,
@@ -62,7 +63,7 @@ class AgentRouterTasks:
 
     def __init__(self, config_path: str = None):
         if config_path is None:
-            self.config_path = project_root / 'config' / 'token.json'
+            self.config_path = get_default_config_path()
         else:
             self.config_path = Path(config_path)
 

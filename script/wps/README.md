@@ -56,7 +56,13 @@ wps/
 
 ### 1. 账号配置
 
-在项目根目录的 `config/token.json` 文件中配置 WPS 账号信息：
+配置文件为 `config/token.json`（仓库只跟踪模板 `config/token.example.json`，首次使用先复制一份）：
+
+```bash
+cd config && cp token.example.json token.json
+```
+
+在 `config/token.json` 中配置 WPS 账号信息：
 
 ```json
 {
@@ -91,6 +97,13 @@ wps/
 **⚠️ 重要提示：**
 - `user_id` 是必需参数（仅任务中心页面用到），如果配置中没有 `user_id`，该账号将跳过任务中心签到（但天天领福利页面仍可正常执行）
 - `max_lottery_limit` 用于控制抽奖次数，避免过度消耗抽奖机会
+- `config/token.json` 已被 `.gitignore` 忽略，**重新拉取仓库不会覆盖它**
+- 面板/容器部署建议把配置放到仓库外，避免重拉或重建时丢失：
+  ```bash
+  export CHECKIN_CONFIG_FILE=/ql/data/config/token.json   # 完整文件路径
+  export CHECKIN_CONFIG_DIR=/ql/data/config               # 或指定目录，自动使用其下的 token.json
+  ```
+  优先级：`CHECKIN_CONFIG_FILE` > `CHECKIN_CONFIG_DIR` > 仓库内 `config/token.json`
 
 ### 2. 获取Cookies和User ID
 

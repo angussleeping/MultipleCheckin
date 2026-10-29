@@ -54,6 +54,7 @@ sys.path.insert(0, str(script_dir))
 from _shared import (
     apply_startup_jitter,
     build_summary,
+    get_default_config_path,
     load_platform_accounts,
     run_accounts,
     send_summary_notification,
@@ -93,7 +94,7 @@ class TraeTasks:
             config_path (str): 配置文件的完整路径，如果为 None 则使用项目根目录下的 config/token.json
         """
         if config_path is None:
-            self.config_path = project_root / "config" / "token.json"
+            self.config_path = get_default_config_path()
         else:
             self.config_path = Path(config_path)
 

@@ -15,13 +15,33 @@ from typing import Any, Optional
 logger = logging.getLogger(__name__)
 
 
+CONFIG_FILE_ENV = 'CHECKIN_CONFIG_FILE'
+CONFIG_DIR_ENV = 'CHECKIN_CONFIG_DIR'
+
+
 def get_project_root() -> Path:
     """返回项目根目录(script/_shared 的上上级)"""
     return Path(__file__).resolve().parent.parent.parent
 
 
 def get_default_config_path() -> Path:
-    """返回默认配置文件路径 config/token.json"""
+    """
+    返回默认配置文件路径
+
+    优先级:
+    1. 环境变量 CHECKIN_CONFIG_FILE(完整文件路径)
+    2. 环境变量 CHECKIN_CONFIG_DIR(目录,自动拼接 token.json)
+    3. 项目根目录 config/token.json
+
+    面板部署时把 token.json 放到仓库外的固定目录并设置上述变量,
+    重新拉取仓库就不会覆盖本地配置。
+    """
+    override_file = os.environ.get(CONFIG_FILE_ENV, '').strip()
+    if override_file:
+        return Path(override_file).expanduser()
+    override_dir = os.environ.get(CONFIG_DIR_ENV, '').strip()
+    if override_dir:
+        return Path(override_dir).expanduser() / 'token.json'
     return get_project_root() / 'config' / 'token.json'
 
 

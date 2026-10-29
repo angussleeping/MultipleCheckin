@@ -10,7 +10,7 @@
 - report: 结果汇总与推送
 """
 
-from .config import load_json_config, load_platform_accounts, save_account_fields
+from .config import get_default_config_path, load_json_config, load_platform_accounts, save_account_fields
 from .http_client import create_session, post_and_parse, request_with_retry
 from .logging import SensitiveDataFilter, setup_logger
 from .report import build_summary, send_summary_notification
@@ -25,6 +25,7 @@ __all__ = [
     'load_platform_accounts',
     'save_account_fields',
     'load_json_config',
+    'get_default_config_path',
     'run_accounts',
     'apply_startup_jitter',
     'build_summary',

@@ -39,6 +39,7 @@ if script_dir not in sys.path:
 from _shared import (
     apply_startup_jitter,
     build_summary,
+    get_default_config_path,
     load_platform_accounts,
     run_accounts,
     send_summary_notification,
@@ -61,14 +62,10 @@ class SmzdmTaskManager:
 
         初始化任务管理器
 
-        Args:
-            config_path: 配置文件路径，默认为项目根目录下的config/token.json
+        配置路径由 get_default_config_path() 决定，可用环境变量
+        CHECKIN_CONFIG_FILE / CHECKIN_CONFIG_DIR 指向仓库外的配置文件
         """
-        # 使用全局变量并转换为Path对象
-        root_path = Path(project_root)
-        config_path = root_path / "config" / "token.json"
-
-        self.config_path = config_path
+        self.config_path = get_default_config_path()
         self.site_name = "什么值得买"
         self.accounts = []
         self.account_results = []  # 收集每个账号的执行结果

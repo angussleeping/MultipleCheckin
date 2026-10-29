@@ -32,6 +32,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from _shared import (
     apply_startup_jitter,
     build_summary,
+    get_default_config_path,
     load_platform_accounts,
     run_accounts,
     save_account_fields,
@@ -54,7 +55,7 @@ class WorkBuddyTasks:
             config_path (str): 配置文件的完整路径，如果为None则使用项目根目录下的config/token.json
         """
         if config_path is None:
-            self.config_path = project_root / "config" / "token.json"
+            self.config_path = get_default_config_path()
         else:
             self.config_path = Path(config_path)
 

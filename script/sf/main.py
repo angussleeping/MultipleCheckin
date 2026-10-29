@@ -36,6 +36,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from _shared import (
     apply_startup_jitter,
     build_summary,
+    get_default_config_path,
     load_platform_accounts,
     run_accounts,
     send_summary_notification,
@@ -107,7 +108,7 @@ class SFTasksManager:
             config_path: 配置文件路径，默认为项目根目录下的config/token.json
         """
         if config_path is None:
-            config_path = project_root / "config" / "token.json"
+            config_path = get_default_config_path()
         else:
             config_path = Path(config_path)
 

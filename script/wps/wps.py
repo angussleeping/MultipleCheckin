@@ -46,14 +46,15 @@ sys.path.insert(0, str(script_root))     # _shared 在此
 from _shared import (
     build_summary,
     create_session,
+    get_default_config_path,
     load_platform_accounts,
     request_with_retry,
     run_accounts,
     send_summary_notification,
     setup_logger,
 )
-from notification import NotificationSound
 
+from notification import NotificationSound
 
 # ---------------------------------------------------------------------------
 # 通用工具函数（从三个脚本中去重合并）
@@ -1190,7 +1191,7 @@ class DailyBenefitsTasks:
         load_accounts: bool = True,
     ):
         if config_path is None:
-            self.config_path = project_root / "config" / "token.json"
+            self.config_path = get_default_config_path()
         else:
             self.config_path = Path(config_path)
         self.enable_notification = enable_notification
@@ -1925,7 +1926,7 @@ class WPSTaskCenterPage:
         load_accounts: bool = True,
     ):
         if config_path is None:
-            self.config_path = project_root / "config" / "token.json"
+            self.config_path = get_default_config_path()
         else:
             self.config_path = Path(config_path)
         self.enable_notification = enable_notification
@@ -2215,7 +2216,7 @@ class WPSMultiPageRunner:
             pages = list(PAGE_REGISTRY.keys())
         self.page_names: list[str] = [p for p in pages if p in PAGE_REGISTRY]
         if config_path is None:
-            self.config_path = project_root / "config" / "token.json"
+            self.config_path = get_default_config_path()
         else:
             self.config_path = Path(config_path)
         self.logger = setup_logger("wps")
@@ -2348,7 +2349,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--config", "-c",
         default=None,
-        help="账号配置文件路径（默认读取项目根目录 config/token.json）",
+        help="账号配置文件路径（默认读取 config/token.json，可用 CHECKIN_CONFIG_FILE / CHECKIN_CONFIG_DIR 覆盖）",
     )
     parser.add_argument(
         "--dry-run",

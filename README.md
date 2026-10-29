@@ -57,6 +57,8 @@ vi token.json              # 填写各平台账号,字段说明见下文
 也可在青龙面板「配置文件」页面，于 `MultipleCheckin/config/` 下新建 `token.json` 并粘贴 `token.example.json` 内容。
 
 > `config/token.json` 与 `config/notification.json` 已在 `.gitignore` 中，**拉库更新不会覆盖它们**。
+>
+> ⚠️ 如果你是从旧版本升级：旧版本曾把 `config/token.json` 纳入版本库，本次拉库可能覆盖该文件一次，请先备份、更新后再还原；从当前版本起它不再被 git 跟踪。
 
 3. **添加定时任务**：在青龙面板「定时任务」中新建任务，例如：
 
@@ -138,6 +140,17 @@ cp notification.example.json notification.json   # 可选
 
 > ✅ `token.json` 与 `notification.json` 已列入 `.gitignore`，**拉库/更新不会覆盖本地配置**，
 > 也不会被误提交。升级脚本时无需备份账号信息。
+
+**把配置放到仓库外（推荐用于面板 / 容器部署）：**
+
+```bash
+export CHECKIN_CONFIG_FILE=/ql/data/config/token.json   # 指定完整文件路径（优先级最高）
+# 或
+export CHECKIN_CONFIG_DIR=/ql/data/config               # 指定目录，自动使用其中的 token.json
+```
+
+配置读取优先级：`CHECKIN_CONFIG_FILE` > `CHECKIN_CONFIG_DIR` > 仓库内 `config/token.json`。
+放到仓库外后，即使重新拉库、强制重置或重建容器，账号配置也不会被覆盖。
 
 ### 各平台 Cookie / Token 配置
 
