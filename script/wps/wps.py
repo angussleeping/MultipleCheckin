@@ -7,7 +7,7 @@ cron: 18 4 * * *
 WPS 签到抽奖统一入口脚本
 整合了原仓库三个独立脚本（main.py / task_center.py / daily_benefits.py）的全部功能，
 通过 CLI 参数控制执行范围：
-    python wps.py                     # 依次执行任务中心 + 天天领福利
+    python wps.py                     # 依次执行天天领福利 + 任务中心（间隔 30~60 秒节流）
     python wps.py --page task_center  # 只执行任务中心
     python wps.py --page daily_benefits  # 只执行天天领福利
 Author: Angus (assisted by Trae)
@@ -18,6 +18,7 @@ import argparse
 import base64
 import json
 import logging
+import os
 import random
 import string
 import sys
@@ -43,7 +44,6 @@ sys.path.insert(0, str(project_root))    # notification 在此
 sys.path.insert(0, str(script_root))     # _shared 在此
 
 from _shared import (
-    apply_startup_jitter,
     build_summary,
     create_session,
     load_platform_accounts,
@@ -81,6 +81,76 @@ def safe_int(value: Any, default: int = 0) -> int:
         return int(value)
     except (TypeError, ValueError):
         return default
+
+
+# WPS_DEBUG=1 时额外输出响应体片段，便于排查接口返回的裸文案（如 "失败"）
+WPS_DEBUG = os.environ.get("WPS_DEBUG", "").strip().lower() in ("1", "true", "yes", "on")
+
+# 服务端可能用多种文案表达“今日已签到”，命中即视为幂等成功
+ALREADY_SIGNED_KEYWORDS = ("has sign", "signed", "已签到", "重复签到", "今日已签")
+
+
+def is_already_signed(message: Any) -> bool:
+    """判断服务端返回是否表示今日已签到（幂等结果，不应记为失败）。"""
+    text = str(message or "").lower()
+    return any(keyword.lower() in text for keyword in ALREADY_SIGNED_KEYWORDS)
+
+
+def _response_digest(response) -> dict[str, Any]:
+    """提取响应中的排障字段；仅 WPS_DEBUG 开启时附带响应体片段。"""
+    digest: dict[str, Any] = {"http_status": response.status_code}
+    try:
+        body = response.json()
+    except ValueError:
+        if WPS_DEBUG:
+            digest["body_snippet"] = response.text[:300]
+        return digest
+    if isinstance(body, dict):
+        for key in ("code", "ext_msg"):
+            if body.get(key) is not None:
+                digest[key] = body[key]
+        if WPS_DEBUG:
+            digest["body_snippet"] = json.dumps(body, ensure_ascii=False)[:300]
+    return digest
+
+
+def describe_failure(result: dict[str, Any]) -> str:
+    """把失败结果格式化为便于排查的单行文案（附带 code/ext_msg/http）。"""
+    message = str(result.get("error") or result.get("message") or "未知错误")
+    extras = [
+        f"{label}={result[key]}"
+        for key, label in (("code", "code"), ("ext_msg", "ext_msg"), ("http_status", "http"))
+        if result.get(key) not in (None, "", 0)
+    ]
+    if result.get("body_snippet"):
+        extras.append(f"body={result['body_snippet']}")
+    return f"{message} ({', '.join(extras)})" if extras else message
+
+
+def _apply_startup_jitter(logger) -> None:
+    """启动随机抖动：默认上限 120 秒，WPS_JITTER_MAX=0 时跳过，并输出可见日志。"""
+    max_seconds = safe_int(os.environ.get("WPS_JITTER_MAX"), 120)
+    if max_seconds <= 0:
+        logger.info("⏭ 跳过启动随机延迟（WPS_JITTER_MAX=%s）", max_seconds)
+        return
+    delay = random.uniform(0, max_seconds)
+    logger.info("⏳ 启动随机延迟 %.0f 秒（上限 %s 秒，可用 WPS_JITTER_MAX 调整）", delay, max_seconds)
+    time.sleep(delay)
+    logger.info("▶ 随机延迟结束，开始执行任务")
+
+
+def _sleep_between_pages(logger) -> None:
+    """页面间节流：避免同一账号在短时间内连续命中两个签到接口（易触发风控）。"""
+    min_seconds = max(0, safe_int(os.environ.get("WPS_PAGE_INTERVAL_MIN"), 30))
+    max_seconds = max(0, safe_int(os.environ.get("WPS_PAGE_INTERVAL_MAX"), 60))
+    if max_seconds <= 0:
+        logger.info("⏭ 跳过页面间隔延迟（WPS_PAGE_INTERVAL_MAX=%s）", max_seconds)
+        return
+    if min_seconds > max_seconds:
+        min_seconds, max_seconds = max_seconds, min_seconds
+    delay = random.uniform(min_seconds, max_seconds)
+    logger.info("⏳ 页面间隔 %.0f 秒（%s~%s 秒，可用 WPS_PAGE_INTERVAL_MIN/MAX 调整）", delay, min_seconds, max_seconds)
+    time.sleep(delay)
 
 
 # ---------------------------------------------------------------------------
@@ -121,9 +191,19 @@ def log_account_start(logger, account_name: str) -> None:
     logger.info(line)
 
 
-def log_account_end(logger, account_name: str, success: bool = True) -> None:
-    icon = "✅" if success else "❌"
+def log_account_end(logger, account_name: str, success: bool = True, partial: bool = False) -> None:
+    if success and partial:
+        icon = "⚠️"
+    else:
+        icon = "✅" if success else "❌"
     logger.info("%s %s 完成", icon, account_name)
+
+
+def _account_status(result: dict[str, Any]) -> str:
+    """统一“成功 / 部分成功 / 失败”文案。"""
+    if result.get("success") and result.get("partial"):
+        return "⚠️ 部分成功"
+    return "✅ 成功" if result.get("success") else "❌ 失败"
 
 
 def log_page_switch(logger, page_name: str) -> None:
@@ -135,13 +215,16 @@ def log_startup(logger, total_accounts: int) -> None:
 
 
 def log_task_result(logger, label: str, result: str) -> None:
-    logger.info("  %-10s → %s", label, result)
+    # 不再用 %-10s 对齐：emoji/中文宽度不一致会导致箭头错位
+    logger.info("  %s → %s", label, result)
 
 
 # ---------------------------------------------------------------------------
 # WPSEncryption / WPSAPI（原 api.py）
 # ---------------------------------------------------------------------------
 _wps_api_logger = setup_logger("wps.api", level=logging.WARNING)
+if WPS_DEBUG:
+    _wps_api_logger.setLevel(logging.DEBUG)
 
 
 class WPSEncryption:
@@ -261,7 +344,9 @@ class WPSAPI:
                         user_info["points_component_number"] = item.get("number", "")
                         user_info["points_component_node_id"] = item.get("component_node_id", "")
                 return user_info
-            return {"success": False, "error": result.get("msg", "未知错误")}
+            digest = _response_digest(response)
+            _wps_api_logger.error("获取用户信息失败: msg=%s, %s", result.get("msg", "未知错误"), digest)
+            return {"success": False, "error": result.get("msg", "未知错误"), **digest}
         except requests.exceptions.RequestException as exc:
             return {"success": False, "error": f"网络请求失败: {exc}"}
         except Exception as exc:
@@ -279,7 +364,9 @@ class WPSAPI:
             result = response.json()
             if result.get("result") == "ok" and "data" in result:
                 return {"success": True, "public_key": result["data"]}
-            return {"success": False, "error": result.get("msg", "未知错误")}
+            digest = _response_digest(response)
+            _wps_api_logger.error("获取加密公钥失败: msg=%s, %s", result.get("msg", "未知错误"), digest)
+            return {"success": False, "error": result.get("msg", "未知错误"), **digest}
         except requests.exceptions.RequestException as exc:
             return {"success": False, "error": f"网络请求失败: {exc}"}
         except Exception as exc:
@@ -298,7 +385,7 @@ class WPSAPI:
         try:
             key_result = self.get_encrypt_key()
             if not key_result["success"]:
-                return {"success": False, "error": f"获取公钥失败: {key_result['error']}"}
+                return {"success": False, "error": f"获取公钥失败: {describe_failure(key_result)}"}
             crypto_result = self.generate_crypto_data(key_result["public_key"], user_id)
             headers = self.base_headers.copy()
             headers["token"] = crypto_result["token"]
@@ -314,6 +401,8 @@ class WPSAPI:
                     "pay_origin": "pc_ucs_rwzx_sign",
                 },
             )
+            digest = _response_digest(response)
+            _wps_api_logger.debug("签到响应: %s", digest)
             if response.status_code == 200:
                 resp_data = response.json()
                 if resp_data.get("result") == "ok":
@@ -321,12 +410,33 @@ class WPSAPI:
                 error_msg = resp_data.get("msg", "未知错误")
                 error_code = resp_data.get("code")
                 ext_msg = resp_data.get("ext_msg", "")
-                if error_code == 2000000 and ext_msg == "userNotLogin":
-                    return {"success": False, "error": "Token已过期，请重新登录", "error_type": "token_expired"}
-                if error_msg == "has sign":
-                    return {"success": True, "already_signed": True, "data": resp_data.get("data", {}), "message": "今日已签到"}
-                return {"success": False, "error": error_msg}
-            return {"success": False, "error": f"HTTP {response.status_code}"}
+                # 登录态失效：code 组合、401 或关键字命中均视为过期
+                if (
+                    (error_code == 2000000 and ext_msg == "userNotLogin")
+                    or is_auth_expired(error_msg)
+                    or is_auth_expired(ext_msg)
+                    or response.status_code == 401
+                ):
+                    _wps_api_logger.error("签到失败(登录态失效): msg=%s, %s", error_msg, digest)
+                    return {
+                        "success": False,
+                        "error": "Token已过期，请重新登录",
+                        "error_type": "token_expired",
+                        **digest,
+                    }
+                # 服务端文案存在多种“今日已签到”表达，命中即按幂等成功处理
+                if is_already_signed(error_msg) or is_already_signed(ext_msg):
+                    _wps_api_logger.info("签到返回今日已签到: msg=%s, %s", error_msg, digest)
+                    return {
+                        "success": True,
+                        "already_signed": True,
+                        "data": resp_data.get("data", {}),
+                        "message": "今日已签到",
+                    }
+                _wps_api_logger.error("签到失败: msg=%s, %s", error_msg, digest)
+                return {"success": False, "error": error_msg, **digest}
+            _wps_api_logger.error("签到请求失败: %s", digest)
+            return {"success": False, "error": f"HTTP {response.status_code}", **digest}
         except requests.exceptions.RequestException as exc:
             return {"success": False, "error": f"网络请求失败: {exc}"}
         except Exception as exc:
@@ -387,13 +497,21 @@ class WPSAPI:
                     }
                 error_code = lottery_v2.get("error_code", 0)
                 send_msg = lottery_v2.get("send_msg", "抽奖失败")
+                _wps_api_logger.error("抽奖失败: msg=%s, error_code=%s", send_msg, error_code)
                 return {"success": False, "error": send_msg, "error_code": error_code}
+            digest = _response_digest(response)
             error_msg = result.get("msg", "未知错误")
-            error_code = result.get("code")
             ext_msg = result.get("ext_msg", "")
-            if error_code == 2000000 and ext_msg == "userNotLogin":
-                return {"success": False, "error": "Token已过期，请重新登录", "error_type": "token_expired"}
-            return {"success": False, "error": error_msg}
+            if (
+                (result.get("code") == 2000000 and ext_msg == "userNotLogin")
+                or is_auth_expired(error_msg)
+                or is_auth_expired(ext_msg)
+                or response.status_code == 401
+            ):
+                _wps_api_logger.error("抽奖失败(登录态失效): msg=%s, %s", error_msg, digest)
+                return {"success": False, "error": "Token已过期，请重新登录", "error_type": "token_expired", **digest}
+            _wps_api_logger.error("抽奖失败: msg=%s, %s", error_msg, digest)
+            return {"success": False, "error": error_msg, **digest}
         except requests.exceptions.RequestException as exc:
             return {"success": False, "error": f"网络请求失败: {exc}"}
         except Exception as exc:
@@ -1533,7 +1651,7 @@ class DailyBenefitsTasks:
     def process_account(self, account_info: dict[str, Any]) -> dict[str, Any]:
         account_name = account_info.get("account_name", "未命名账号")
         account_logger = bind_logger(self.logger, account=account_name)
-        log_page_switch(account_logger, self.page_name)
+        # 页面切换日志由 WPSMultiPageRunner 统一输出，此处不再重复打印
 
         result: dict[str, Any] = {
             "account_name": account_name,
@@ -1729,7 +1847,7 @@ class DailyBenefitsTasks:
         if not self.accounts:
             self.logger.warning("没有可处理的 WPS 账号")
             return
-        apply_startup_jitter("WPS_JITTER_MAX", 600)
+        _apply_startup_jitter(self.logger)
         self.dry_run = dry_run
         self.account_results = run_accounts(
             self.accounts,
@@ -1775,7 +1893,7 @@ class DailyBenefitsTasks:
         self.logger.info("执行成功: %s", summary["success"])
         self.logger.info("执行失败: %s", summary["failed"])
         for item in self.account_results:
-            status = "✅ 成功" if item["success"] else "❌ 失败"
+            status = _account_status(item)
             self.logger.info("%s: %s - %s", item["account_name"], status, item["message"])
         self.logger.info("%s", "=" * 60)
 
@@ -1823,12 +1941,15 @@ class WPSTaskCenterPage:
     def process_account(self, account_info: dict[str, Any]) -> dict[str, Any]:
         account_name = account_info.get("account_name", "未命名账号")
         account_logger = bind_logger(self.logger, account=account_name)
-        log_page_switch(account_logger, self.page_name)
+        # 页面切换日志由 WPSMultiPageRunner 统一输出，此处不再重复打印
 
         result: dict[str, Any] = {
             "account_name": account_name,
             "success": False,
             "auth_expired": False,
+            "partial": False,
+            "sign_success": False,
+            "sub_tasks": [],
             "message": "",
             "sign_info": {},
             "sign_rewards": [],
@@ -1851,39 +1972,44 @@ class WPSTaskCenterPage:
                 return result
 
             api = WPSAPI(cookies=cookies, user_agent=user_agent)
+            sub_tasks: list[dict[str, Any]] = []
+
+            # 签到失败不再中断整个页面：只记录失败，继续查询积分与抽奖
             sign_result = api.sign_in(user_id=user_id)
-            if not sign_result["success"]:
+            if sign_result["success"]:
+                result["sign_success"] = True
+                result["sign_info"] = sign_result.get("data", {}) or {}
+                if sign_result.get("already_signed"):
+                    sign_detail = "今日已签到"
+                    log_task_result(account_logger, "🔐 签到", "✅ 今日已签到")
+                else:
+                    sign_detail = "签到成功"
+                    log_task_result(account_logger, "🔐 签到", "✅ 签到成功")
+                    rewards = result["sign_info"].get("rewards", [])
+                    result["sign_rewards"] = [r.get("reward_name", "") for r in rewards if r.get("reward_name")]
+            else:
+                sign_detail = describe_failure(sign_result)
                 if sign_result.get("error_type") == "token_expired":
                     result["auth_expired"] = True
                     result["message"] = "Token已过期，请重新登录"
                     log_task_result(account_logger, "🔐 签到", "❌ Token已过期")
-                else:
-                    result["message"] = sign_result.get("error", "任务中心签到失败")
-                    log_task_result(account_logger, "🔐 签到", f"❌ {result['message']}")
-                return result
+                    return result
+                log_task_result(account_logger, "🔐 签到", f"❌ {sign_detail}（继续查询积分/抽奖）")
+                account_logger.error("任务中心签到失败: %s", sign_detail)
+            sub_tasks.append({"name": "签到", "success": bool(sign_result["success"]), "message": sign_detail})
 
-            result["success"] = True
-            result["sign_info"] = sign_result.get("data", {}) or {}
-            if sign_result.get("already_signed"):
-                result["message"] = "任务中心今日已签到"
-                log_task_result(account_logger, "🔐 签到", "✅ 今日已签到")
-            else:
-                result["message"] = "任务中心签到成功"
-                log_task_result(account_logger, "🔐 签到", "✅ 签到成功")
-                rewards = result["sign_info"].get("rewards", [])
-                result["sign_rewards"] = [r.get("reward_name", "") for r in rewards if r.get("reward_name")]
-
+            points_detail = ""
             user_info_result = api.get_user_info()
             if user_info_result["success"]:
                 result["user_info"] = user_info_result
             else:
+                points_detail = describe_failure(user_info_result)
                 if user_info_result.get("error_type") == "token_expired" or is_auth_expired(user_info_result.get("error", "")):
                     result["auth_expired"] = True
                     result["message"] = "Token已过期，请重新登录"
-                    result["success"] = False
                     log_task_result(account_logger, "💎 积分", "❌ Token已过期")
                     return result
-                log_task_result(account_logger, "💎 积分", f"⚠ 获取失败: {user_info_result.get('error', '获取用户信息失败')}")
+                log_task_result(account_logger, "💎 积分", f"⚠ 获取失败: {points_detail}")
 
             lottery_times = result["user_info"].get("lottery_times", 0)
             component_number = result["user_info"].get("lottery_component_number", "ZJ2025092916515917")
@@ -1900,10 +2026,14 @@ class WPSTaskCenterPage:
                 log_task_result(account_logger, "💎 积分", f"ℹ️ dry-run: {points} pt (抽奖 {lottery_times} 次可用)")
                 log_task_result(account_logger, "🎰 抽奖", f"ℹ️ dry-run: 跳过，可用 {lottery_times} 次")
                 log_task_result(account_logger, "💎 即将过期积分", f"{advent} pt")
-                if not result["message"]:
-                    result["message"] = "dry-run 状态正常，已完成签到查询（服务端幂等），未执行抽奖"
-                result["message"] += " | dry-run: 跳过抽奖"
                 result["lottery_info"] = {"total_attempts": 0, "successful_draws": 0, "results": [], "prizes": [], "skipped": True}
+                sub_tasks.append({"name": "抽奖", "success": True, "message": f"dry-run 跳过（可用 {lottery_times} 次）"})
+                result["sub_tasks"] = sub_tasks
+                result["success"] = user_info_result["success"]
+                result["partial"] = result["success"] and not result["sign_success"]
+                result["message"] = "dry-run 状态正常 | " + " | ".join(
+                    f"{task['name']}: {task['message']}" for task in sub_tasks
+                )
                 return result
 
             if lottery_times > 0:
@@ -1930,11 +2060,12 @@ class WPSTaskCenterPage:
                             }
                             log_task_result(account_logger, "🎰 抽奖", "❌ Token已过期")
                             return result
-                        log_task_result(account_logger, "🎰 抽奖", f"❌ {lottery_result.get('error', '抽奖失败')}")
+                        log_task_result(account_logger, "🎰 抽奖", f"❌ {describe_failure(lottery_result)}")
 
+                successful_draws = sum(1 for r in lottery_results if r["success"])
                 result["lottery_info"] = {
                     "total_attempts": actual_lottery_times,
-                    "successful_draws": sum(1 for r in lottery_results if r["success"]),
+                    "successful_draws": successful_draws,
                     "results": lottery_results,
                     "prizes": prize_list,
                 }
@@ -1942,8 +2073,14 @@ class WPSTaskCenterPage:
                     log_task_result(account_logger, "🎰 抽奖", f"✅ {', '.join(prize_list)}")
                 else:
                     log_task_result(account_logger, "🎰 抽奖", "⚠ 未中奖")
+                sub_tasks.append({
+                    "name": "抽奖",
+                    "success": successful_draws > 0,
+                    "message": f"成功 {successful_draws} 次" if successful_draws else "全部失败",
+                })
             else:
                 log_task_result(account_logger, "🎰 抽奖", "⏭ 无可用次数")
+                sub_tasks.append({"name": "抽奖", "success": True, "message": "无可用次数"})
 
             final_user_info = api.get_user_info()
             if final_user_info["success"]:
@@ -1953,10 +2090,19 @@ class WPSTaskCenterPage:
                 if final_user_info.get("error_type") == "token_expired" or is_auth_expired(final_user_info.get("error", "")):
                     result["auth_expired"] = True
                     result["message"] = "Token已过期，请重新登录"
-                    result["success"] = False
                     log_task_result(account_logger, "💎 积分", "❌ Token已过期")
                     return result
-                log_task_result(account_logger, "💎 积分", "⚠ 获取失败")
+                points_detail = describe_failure(final_user_info)
+                log_task_result(account_logger, "💎 积分", f"⚠ 获取失败: {points_detail}")
+
+            # 汇总本页子任务：任一成功即视为页面有进展，部分失败时标记 partial
+            result["sub_tasks"] = sub_tasks
+            result["success"] = any(task["success"] for task in sub_tasks)
+            result["partial"] = result["success"] and any(not task["success"] for task in sub_tasks)
+            summary_parts = [f"{task['name']}: {task['message']}" for task in sub_tasks]
+            if not user_info_result["success"]:
+                summary_parts.append(f"积分: {points_detail}")
+            result["message"] = " | ".join(summary_parts)
 
         except Exception as exc:
             result["success"] = False
@@ -1991,7 +2137,7 @@ class WPSTaskCenterPage:
         if not self.accounts:
             self.logger.warning("没有需要处理的账号")
             return
-        apply_startup_jitter("WPS_JITTER_MAX", 600)
+        _apply_startup_jitter(self.logger)
         self.dry_run = dry_run
         self.account_results = run_accounts(
             self.accounts,
@@ -2034,7 +2180,7 @@ class WPSTaskCenterPage:
             for prize, count in prize_summary.items():
                 self.logger.info("  %s: %s 个", prize, count)
         for result in self.account_results:
-            status = "✅ 成功" if result["success"] else "❌ 失败"
+            status = _account_status(result)
             self.logger.info("  %s: %s - %s", result["account_name"], status, result["message"])
         self.logger.info("%s", "=" * 60)
 
@@ -2054,9 +2200,10 @@ class WPSTaskCenterPage:
 # ---------------------------------------------------------------------------
 # 统一入口（整合原 main.py 的多页面调度器 + argparse）
 # ---------------------------------------------------------------------------
+# 默认先跑天天领福利（7 天连续签到，错过不可补），再跑任务中心签到
 PAGE_REGISTRY = {
-    "task_center": WPSTaskCenterPage,
     "daily_benefits": DailyBenefitsTasks,
+    "task_center": WPSTaskCenterPage,
 }
 
 
@@ -2113,22 +2260,28 @@ class WPSMultiPageRunner:
                 except Exception:
                     self.logger.exception("构造 %s 推送详情行失败", page_name)
 
-            if not page_result.get("success", False):
-                account_result["success"] = False
-
             # 页面级隔离：某页面 token 过期不影响其他页面继续跑
             # （WPS 各页面独立 cookie，一个过期另一个可能仍有效）
             if page_result.get("auth_expired") or is_auth_expired(page_result.get("message", "")):
                 self.logger.warning("[%s] 页面 %s 登录态已失效，继续执行后续页面", account_name, page_name)
 
             if page_index < len(self.page_runners) - 1:
-                time.sleep(random.uniform(1, 2))
+                _sleep_between_pages(self.logger)
+
+        # 账号级判定：任一页面有进展即算成功，存在失败页面或子任务失败时标记 partial
+        page_results = [item["result"] for item in account_result["pages"]]
+        page_success = [bool(result_item.get("success")) for result_item in page_results]
+        account_result["success"] = any(page_success)
+        account_result["partial"] = (
+            (any(page_success) and not all(page_success))
+            or any(result_item.get("partial") for result_item in page_results)
+        )
 
         account_result["message"] = " | ".join(
             f"{item['page_name']}: {item['result'].get('message', '')}"
             for item in account_result["pages"]
         )
-        log_account_end(self.logger, account_name, account_result["success"])
+        log_account_end(self.logger, account_name, account_result["success"], account_result["partial"])
         return account_result
 
     def run(self, dry_run: bool = False) -> None:
@@ -2136,7 +2289,7 @@ class WPSMultiPageRunner:
         if not self.accounts:
             self.logger.warning("没有需要处理的账号")
             return
-        apply_startup_jitter("WPS_JITTER_MAX", 600)
+        _apply_startup_jitter(self.logger)
         self.logger.info("将依次执行页面: %s%s", " → ".join(self.page_names),
                          "（dry-run 状态检查，仅查询不执行）" if dry_run else "")
         self.logger.info("")
@@ -2158,11 +2311,14 @@ class WPSMultiPageRunner:
         self.logger.info("")
         log_banner(self.logger, "多页面任务执行结果统计" + ("（dry-run）" if dry_run else ""))
         summary = build_summary(account_results)
+        partial_count = sum(1 for item in account_results if item.get("success") and item.get("partial"))
         self.logger.info("总账号数: %s", summary["total"])
         self.logger.info("执行成功: %s", summary["success"])
+        if partial_count:
+            self.logger.info("  其中部分成功: %s", partial_count)
         self.logger.info("执行失败: %s", summary["failed"])
         for item in account_results:
-            status = "✅ 成功" if item["success"] else "❌ 失败"
+            status = _account_status(item)
             self.logger.info("%s: %s", item["account_name"], status)
             for page_item in item.get("pages", []):
                 self.logger.info("  - %s: %s", page_item["page_name"], page_item["result"].get("message", ""))
